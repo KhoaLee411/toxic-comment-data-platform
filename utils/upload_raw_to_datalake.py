@@ -4,14 +4,11 @@ from pathlib import Path
 from load_config_from_file import load_cfg
 from minio import Minio
 
-# CFG_FILE = "./configs/config.yaml"
-# Robust path for config file relative to this script
-BASE_DIR = Path(__file__).resolve().parent.parent
-CFG_FILE = BASE_DIR / "configs" / "config.yml"
+CFG_FILE = "./configs/config.yml"
 
 
-def upload_data_local_to_minio(minio_client, local_path, bucket_name, folder_name):
-    local_path = Path(local_path)
+def upload_data_local_to_minio(minio_client, raw_path, bucket_name, folder_name):
+    local_path = Path(raw_path)
 
     for local_file in local_path.rglob("*"):
         if local_file.is_file():
@@ -26,7 +23,7 @@ def upload_data_local_to_minio(minio_client, local_path, bucket_name, folder_nam
 def main():
     cfg = load_cfg(CFG_FILE)
     data_lake_cfg = cfg["data_lake"]
-    data_local_cfg = cfg["data_local"]
+    raw_path = cfg["raw"]
 
     minio_client = Minio(
         endpoint=data_lake_cfg["endpoint"],
@@ -43,9 +40,9 @@ def main():
 
     upload_data_local_to_minio(
         minio_client,
-        data_local_cfg["local_path"],
+        raw_path,
         data_lake_cfg["bucket_name"],
-        data_lake_cfg["folder_name"],
+        data_lake_cfg["folder_bronze"],
     )
 
 

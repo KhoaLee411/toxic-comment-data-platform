@@ -1,17 +1,18 @@
 data_lake:
   endpoint: localhost:9000
-  bucket_name: raw
-  folder_name: delta_lake
+  bucket_name: datalake
+  folder_bronze: bronze
+  folder_silver: silver
+  folder_gold: gold
   access_key: ${MINIO_ROOT_USER}
   secret_key: ${MINIO_ROOT_PASSWORD}
   secure: false
 
-dwh:
+data_warehouse:
   host: localhost
   port: 5433
   database: ${POSTGRES_DB}
   user: ${POSTGRES_USER}
   password: ${POSTGRES_PASSWORD}
 
-data_local:
-  local_path: ./data_local/raw
+raw: ./raw
