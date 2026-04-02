@@ -16,3 +16,6 @@ data_warehouse:
   password: ${POSTGRES_PASSWORD}
 
 raw: ./raw
+
+spark:
+  executor_memory: 8g
