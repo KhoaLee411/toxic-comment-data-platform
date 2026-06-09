@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: staging_source
+    schema: staging
+    description: "Raw tokenized toxic comment data ingested from Kafka into PostgreSQL staging."
+    tables:
+      - name: text_comment_1
+        description: "Raw staging table with BERT-tokenized comment data."
+        columns:
+          - name: labels
+            description: "Binary toxicity label: 0 = non-toxic, 1 = toxic."
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_in_set:
+                  value_set: [0, 1]
+                  quote_values: false
+
+          - name: input_ids
+            description: "PostgreSQL integer array of BERT token IDs. Format: {101, 2023, ...}"
+            tests:
+              - not_null
+
+          - name: attention_mask
+            description: "PostgreSQL integer array of attention mask values (0 or 1). Format: {1, 1, ...}"
+            tests:
+              - not_null
