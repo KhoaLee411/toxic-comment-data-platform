@@ -4,22 +4,24 @@ from pathlib import Path
 
 import pandas as pd
 from deltalake.writer import write_deltalake
+from loguru import logger
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from load_config_from_file import load_cfg
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-CFG_FILE = BASE_DIR / "configs" / "config.yml"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+CFG_FILE = PROJECT_ROOT / "configs" / "config.yml"
 
-if __name__ == "__main__":
+
+def main():
     cfg = load_cfg(str(CFG_FILE))
     data_cfg = cfg["data"]
 
-    csv_dir = BASE_DIR / data_cfg["local_path"]
-    delta_base = BASE_DIR / data_cfg["deltalake_folder_path"]
+    csv_dir = PROJECT_ROOT / data_cfg["local_path"]
+    delta_base = PROJECT_ROOT / data_cfg["deltalake_folder_path"]
     delta_base.mkdir(parents=True, exist_ok=True)
 
-    for csv_file in csv_dir.glob("*.csv"):
+    for csv_file in sorted(csv_dir.glob("*.csv")):
         file_name = csv_file.stem
         delta_path = delta_base / file_name
 
@@ -29,6 +31,10 @@ if __name__ == "__main__":
         try:
             df = pd.read_csv(csv_file)
             write_deltalake(str(delta_path), df)
-            print(f"✅ Generated Delta Lake table: {file_name}")
+            logger.success(f"Generated Delta table: {file_name}")
         except Exception as e:
-            print(f"❌ Failed to process {csv_file}: {e}")
+            logger.error(f"Failed to process '{csv_file.name}': {e}")
+
+
+if __name__ == "__main__":
+    main()
