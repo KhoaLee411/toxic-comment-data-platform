@@ -2,7 +2,7 @@ import psycopg2
 from loguru import logger
 
 
-class PostgresSQLClient:
+class PostgreSQLClient:
     def __init__(self, database, user, password, host="localhost", port=5433):
         self.conn = psycopg2.connect(
             dbname=database,
@@ -12,6 +12,13 @@ class PostgresSQLClient:
             port=int(port),
         )
         self.conn.autocommit = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
 
     def execute_query(self, query: str):
         with self.conn.cursor() as cur:

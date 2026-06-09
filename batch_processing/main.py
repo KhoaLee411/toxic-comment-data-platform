@@ -25,8 +25,8 @@ tokenizer = AutoTokenizer.from_pretrained(cfg["model"]["name"])
 def tokenize_batch(spark_df):
     logger.info("Converting Spark DataFrame to Pandas for tokenization...")
     pandas_df = spark_df.toPandas()
-
     logger.info(f"Tokenizing {len(pandas_df)} rows...")
+
     encoded = tokenizer(
         pandas_df["comment_text"].tolist(),
         max_length=cfg["model"]["max_length"],
@@ -47,18 +47,11 @@ def _count_rows(conn, schema: str, table: str) -> int:
         return 0
 
 
-def write_to_staging(pandas_df, table_name: str, postgres_cfg: dict):
-    schema = postgres_cfg["staging_schema"]
-    engine = create_engine(
-        f"postgresql://{postgres_cfg['user']}:{postgres_cfg['password']}"
-        f"@{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}"
-    )
-
+def write_to_staging(pandas_df, table_name: str, engine, schema: str):
     with engine.begin() as conn:
         before = _count_rows(conn, schema, table_name)
-    logger.info(f"Before insert: {schema}.{table_name} has {before} rows")
+    logger.info(f"Inserting {len(pandas_df)} rows into {schema}.{table_name} (currently {before} rows)...")
 
-    logger.info(f"Inserting {len(pandas_df)} rows into {schema}.{table_name}...")
     pandas_df.to_sql(
         name=table_name,
         con=engine,
@@ -70,7 +63,7 @@ def write_to_staging(pandas_df, table_name: str, postgres_cfg: dict):
 
     with engine.begin() as conn:
         after = _count_rows(conn, schema, table_name)
-    logger.success(f"After insert: {schema}.{table_name} has {after} rows (+{after - before})")
+    logger.success(f"Done: {schema}.{table_name} now has {after} rows (+{after - before})")
 
 
 def list_minio_folders(minio_client: Minio, bucket: str, prefix: str) -> list[str]:
@@ -100,6 +93,11 @@ def main():
         secure=datalake_cfg.get("secure", False),
     )
 
+    engine = create_engine(
+        f"postgresql://{postgres_cfg['user']}:{postgres_cfg['password']}"
+        f"@{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}"
+    )
+
     prefix = datalake_cfg["folder_name"] + "/"
     folders = list_minio_folders(minio_client, datalake_cfg["bucket_name"], prefix)
 
@@ -110,7 +108,12 @@ def main():
             df = spark.read.parquet(parquet_path)
             logger.info(f"Read {df.count()} rows, columns: {df.columns}")
             processed_df = tokenize_batch(df)
-            write_to_staging(processed_df, table_name=folder, postgres_cfg=postgres_cfg)
+            write_to_staging(
+                processed_df,
+                table_name=folder,
+                engine=engine,
+                schema=postgres_cfg["staging_schema"],
+            )
         except Exception as e:
             logger.error(f"Failed to process folder '{folder}': {e}")
 

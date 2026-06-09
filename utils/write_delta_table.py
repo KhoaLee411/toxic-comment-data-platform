@@ -22,7 +22,7 @@ def main():
     delta_base.mkdir(parents=True, exist_ok=True)
 
     for csv_file in sorted(csv_dir.glob("*.csv")):
-        file_name = csv_file.stem
+        file_name = csv_file.stem.replace("-", "_")
         delta_path = delta_base / file_name
 
         if delta_path.exists():

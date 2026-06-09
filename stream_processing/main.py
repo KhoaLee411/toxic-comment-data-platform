@@ -68,6 +68,7 @@ def write_to_production(batch_df: DataFrame, batch_id: int, postgres_cfg: dict):
         )
     )
 
+    tok = tok.cache()
     row_count = tok.count()
     tok.write.jdbc(
         url=(
@@ -82,6 +83,7 @@ def write_to_production(batch_df: DataFrame, batch_id: int, postgres_cfg: dict):
             "driver": "org.postgresql.Driver",
         },
     )
+    tok.unpersist()
     logger.success(f"Batch {batch_id}: wrote {row_count} rows to production.comments")
 
 

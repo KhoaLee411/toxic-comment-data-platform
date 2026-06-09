@@ -23,8 +23,8 @@ case $cmd in
             exit 1
         else
             echo "Registering connector from $2"
-            curl -i -X POST -H "Accept:application/json" -H 'Content-Type: application/json' \
-                http://localhost:8083/connectors -d @$2
+            envsubst < "$2" | curl -i -X POST -H "Accept:application/json" -H 'Content-Type: application/json' \
+                http://localhost:8083/connectors -d @-
         fi
         ;;
     *)
