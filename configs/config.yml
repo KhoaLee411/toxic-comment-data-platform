@@ -1,4 +1,4 @@
-data_lake:
+datalake:
   endpoint: localhost:9000
   bucket_name: raw
   folder_name: delta_lake
@@ -6,12 +6,21 @@ data_lake:
   secret_key: ${MINIO_ROOT_PASSWORD}
   secure: false
 
-dwh:
+dw_postgres:
   host: localhost
   port: 5433
   database: ${POSTGRES_DB}
   user: ${POSTGRES_USER}
   password: ${POSTGRES_PASSWORD}
+  staging_schema: staging
 
-data_local:
+data:
   local_path: ./data_local/raw
+  deltalake_folder_path: ./data_local/delta_lake
+
+spark:
+  executor_memory: 2g
+
+model:
+  name: bert-base-uncased
+  max_length: 512

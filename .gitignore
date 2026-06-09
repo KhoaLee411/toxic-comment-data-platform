@@ -1,3 +1,12 @@
-.env
-data/
+data_local/delta_lake/
 my-note.md
+
+# .gitignore
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
