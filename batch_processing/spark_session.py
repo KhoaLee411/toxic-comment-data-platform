@@ -11,12 +11,13 @@ def create_spark_session(
     memory: str,
     app_name: str = "Toxic Comment Processing",
     extra_packages: str = "",
+    extra_jars: str = "",
 ) -> SparkSession:
     try:
         logger.info(f"Initializing Spark session: {app_name}")
         packages = f"{_PACKAGES},{extra_packages}" if extra_packages else _PACKAGES
 
-        spark = (
+        builder = (
             SparkSession.builder.appName(app_name)
             .config("spark.executor.memory", memory)
             .config("spark.driver.memory", memory)
@@ -27,8 +28,11 @@ def create_spark_session(
                 "spark.sql.catalog.spark_catalog",
                 "org.apache.spark.sql.delta.catalog.DeltaCatalog",
             )
-            .getOrCreate()
         )
+        if extra_jars:
+            builder = builder.config("spark.jars", extra_jars)
+            
+        spark = builder.getOrCreate()
         logger.success("Spark session created.")
         return spark
     except Exception as e:

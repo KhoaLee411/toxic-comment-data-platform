@@ -12,3 +12,4 @@ loguru==0.7.3
 pyspark==3.5.1
 torch==2.5.1
 transformers==4.46.3
+apache-flink==1.18.0
