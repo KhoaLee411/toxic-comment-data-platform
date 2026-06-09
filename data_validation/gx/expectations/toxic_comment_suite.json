@@ -1,0 +1,99 @@
+{
+  "data_asset_type": null,
+  "expectation_suite_name": "toxic_comment_suite",
+  "expectations": [
+    {
+      "expectation_type": "expect_table_columns_to_match_set",
+      "kwargs": {
+        "column_set": ["id", "labels", "input_ids", "attention_mask"],
+        "exact_match": false
+      },
+      "meta": {
+        "notes": "Core required columns. 'id' is optional (present in CSV/Kafka, absent in PG staging)."
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "labels"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "input_ids"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "attention_mask"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "labels",
+        "value_set": [0, 1]
+      },
+      "meta": {
+        "notes": "Binary classification: 0 = non-toxic, 1 = toxic"
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "id"
+      },
+      "meta": {
+        "notes": "Only applies when 'id' column exists (CSV/Kafka data)"
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": {
+        "column": "id"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_match_regex",
+      "kwargs": {
+        "column": "id",
+        "mostly": 1.0,
+        "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "meta": {
+        "notes": "Strict UUID v4 format validation"
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_match_regex",
+      "kwargs": {
+        "column": "input_ids",
+        "regex": "^\\s*\\[\\s*\\d+(?:\\s*,\\s*\\d+)*\\s*\\]\\s*$"
+      },
+      "meta": {
+        "notes": "JSON array format for CSV/Kafka source. e.g. [101, 2023, 1010]"
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_match_regex",
+      "kwargs": {
+        "column": "attention_mask",
+        "regex": "^\\s*\\[\\s*[01](?:\\s*,\\s*[01])*\\s*\\]\\s*$"
+      },
+      "meta": {
+        "notes": "JSON array of 0/1 for CSV/Kafka source"
+      }
+    }
+  ],
+  "ge_cloud_id": null,
+  "meta": {
+    "great_expectations_version": "0.17.21",
+    "notes": "Unified expectation suite for toxic comment data. Regex expectations apply to CSV/Kafka data (JSON array format). For PostgreSQL native arrays ({...}), use the PG-specific suite."
+  }
+}
