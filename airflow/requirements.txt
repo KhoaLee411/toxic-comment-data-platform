@@ -1,15 +1,35 @@
-apache-airflow==2.7.1
-apache-airflow-providers-postgres==5.6.1
-airflow-provider-great-expectations==0.2.6
-apache-airflow-providers-docker==3.7.5
+# ============================================================
+# airflow/requirements.txt
+# Container: Airflow scheduler + webserver
+
+# ============================================================
+# QUAN TRỌNG: Không cài airflow bằng pip install thuần —
+# dùng constraints file để tránh dependency hell:
+#   pip install -r requirements.txt \
+#     --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-3.11.txt"
+# ============================================================
+
+# --- Airflow core ---
+apache-airflow==2.10.4
+apache-airflow-providers-postgres==5.11.0 
+apache-airflow-providers-docker==3.10.0
+
+# --- Great Expectations provider ---
+airflow-provider-great-expectations==0.3.2
+
+# --- Data & ML ---
 pandas==2.3.1
+SQLAlchemy==2.0.42     
 psycopg2-binary==2.9.10
-SQLAlchemy==1.4.49
 PyYAML==6.0.2
 datasets==4.0.0
 torch==2.5.1
-loguru==0.7.3
-scikit-learn==1.6.1
 transformers==4.46.3
-dvc[s3]==3.62.0
+scikit-learn==1.6.1
+
+# --- ML experiment tracking ---
 mlflow==3.1.4
+dvc[s3]==3.62.0
+
+# --- Observability ---
+loguru==0.7.3

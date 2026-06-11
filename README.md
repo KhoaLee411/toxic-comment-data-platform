@@ -22,7 +22,7 @@ Raw CSVs (`comment_text,labels`) in `data_local/raw/` are processed via two pipe
 - **`stream_kafka_compose.yaml`** — Kafka + Debezium stack:
   - Zookeeper, Kafka broker, Schema Registry, Debezium Connect, Debezium UI
   - Debezium UI at `:8085`, Kafka Control Center at `:9021`
-  - Both compose files join the **external** Docker network `shared-network`
+  - Both compose files join the **external** Docker network `toxic-platform-network`
 
 ### Config & Utilities
 
@@ -44,7 +44,7 @@ Raw CSVs (`comment_text,labels`) in `data_local/raw/` are processed via two pipe
 ```
 docker compose -f data_lake_compose.yml up -d
          ↓
-python utils/write_delta_table.py        # CSV → Delta Lake (data_local/delta_lake/)
+python utils/csv_to_delta_table.py      # CSV → Delta Lake (data_local/delta_lake/)
 python utils/upload_data_to_datalake.py  # Delta files → MinIO raw/delta_lake/
 python utils/investigate_delta_table.py  # Inspect local Delta tables (optional)
          ↓
@@ -70,7 +70,7 @@ python stream_processing/main.py            # Spark readStream: Kafka → hf_tok
 
 ```bash
 # One-time setup
-docker network create shared-network
+docker network create toxic-platform-network
 
 # Batch pipeline
 docker compose -f data_lake_compose.yml up -d

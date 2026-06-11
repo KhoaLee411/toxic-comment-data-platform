@@ -15,8 +15,8 @@ dw_postgres:
   staging_schema: staging
 
 data:
-  local_path: ./data_local/raw
-  deltalake_folder_path: ./data_local/delta_lake
+  csv_path: ./data_local/raw
+  delta_path: ./data_local/delta_format
 
 spark:
   executor_memory: 2g

@@ -36,5 +36,5 @@ services:
 
 networks:
   default:
-    name: shared-network
+    name: toxic-platform-network
     external: true

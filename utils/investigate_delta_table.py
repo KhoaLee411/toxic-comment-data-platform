@@ -1,37 +1,28 @@
 import json
-import sys
 from pathlib import Path
 
 from deltalake import DeltaTable
-from loguru import logger
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 from load_config_from_file import load_cfg
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CFG_FILE = PROJECT_ROOT / "configs" / "config.yml"
+CFG_FILE = "./configs/config.yml"
 
 
-def inspect_table(delta_path: Path):
-    logger.info(f"Inspecting table: {delta_path.name}")
-    dt = DeltaTable(str(delta_path))
-    print(f"Version  : {dt.version()}")
-    print(f"Schema   : {json.loads(dt.schema().to_json())}")
-    print(f"Files    : {dt.file_uris()}")
-    print(f"History  : {dt.history()}")
-    print(dt.to_pandas())
+def investigate(table_name: str, path: Path):
+    print(f"\n===== {table_name} =====")
+    dt = DeltaTable(path / table_name, version=0)
+    print("Schema:", json.loads(dt.schema().to_json()))
+    print("Version:", dt.version())
+    print("Files:", dt.file_uris())
+    print("Sample data:\n", dt.to_pandas(columns=["comment_text", "labels"]))
+    print("History:\n", dt.history())
 
 
 def main():
-    cfg = load_cfg(str(CFG_FILE))
-    delta_base = PROJECT_ROOT / cfg["data"]["deltalake_folder_path"]
+    data_cfg = load_cfg(CFG_FILE)["data"]
+    base_path = Path(data_cfg["delta_path"])
 
-    for delta_dir in sorted(delta_base.iterdir()):
-        if delta_dir.is_dir():
-            try:
-                inspect_table(delta_dir)
-            except Exception as e:
-                logger.error(f"Failed to inspect '{delta_dir.name}': {e}")
+    for table_name in ["text_comment_1", "text_comment_2"]:
+        investigate(table_name, base_path)
 
 
 if __name__ == "__main__":

@@ -1,15 +1,23 @@
+# ============================================================
+# requirements.txt  (ROOT)
+# Mục đích: CI pipeline, data validation, dbt transformation
+# ============================================================
 
-python-dotenv==1.0.0
-PyYAML==6.0.2
-minio==7.2.16
-pandas==2.3.1
-numpy==1.22.4
-pyarrow==14.0.0
+# --- Data validation ---
+great-expectations==1.18.0
+ruamel.yaml>=0.18.4    
+
+# --- Data transformation ---
+dbt-core==1.8.7        
+dbt-postgres==1.8.2    
+
+# --- Delta Lake (dùng cho validation trên Delta tables) ---
 deltalake==1.1.3
-psycopg2-binary==2.9.10
-SQLAlchemy==2.0.42
-loguru==0.7.3
-pyspark==3.5.1
-torch==2.5.1
-transformers==4.46.3
-apache-flink==1.18.0
+pyarrow==14.0.0        
+
+# --- Numpy ---
+numpy>=1.25.0,<2.0.0
+
+# --- Utils & Misc ---
+python-dotenv
+pandas

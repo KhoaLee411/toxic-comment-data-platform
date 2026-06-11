@@ -1,29 +1,31 @@
-import sys
+import os
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from loguru import logger
+from load_config_from_file import load_cfg
 from minio import Minio
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from load_config_from_file import load_cfg
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CFG_FILE = PROJECT_ROOT / "configs" / "config.yml"
+CFG_FILE = "./configs/config.yml"
 
 
-def upload_directory_to_minio(
-    minio_client: Minio, local_path: Path, bucket_name: str, minio_prefix: str
-):
+def upload_local_directory_to_minio(minio_client, local_path, bucket_name, minio_path, max_workers=8):
     local_path = Path(local_path)
-    for local_file in local_path.rglob("*"):
-        if local_file.is_file():
-            remote_path = f"{minio_prefix}/{local_file.relative_to(local_path)}"
-            minio_client.fput_object(bucket_name, remote_path, str(local_file))
-            logger.info(f"Uploaded {local_file.name} → {bucket_name}/{remote_path}")
+    files = [f for f in local_path.rglob("*") if f.is_file()]
+
+    def _upload(local_file):
+        remote_path = os.path.join(minio_path, str(local_file.relative_to(local_path)))
+        minio_client.fput_object(bucket_name, remote_path, str(local_file))           
+        return local_file, remote_path
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(_upload, f): f for f in files}
+        for future in as_completed(futures):
+            local_file, remote_path = future.result()
+            print(f"📤 Uploaded {local_file} → {bucket_name}/{remote_path}")
 
 
 def main():
-    cfg = load_cfg(str(CFG_FILE))
+    cfg = load_cfg(CFG_FILE)
     datalake_cfg = cfg["datalake"]
     data_cfg = cfg["data"]
 
@@ -34,20 +36,18 @@ def main():
         secure=datalake_cfg.get("secure", False),
     )
 
-    bucket = datalake_cfg["bucket_name"]
-    if not minio_client.bucket_exists(bucket):
-        minio_client.make_bucket(bucket)
-        logger.success(f"Created bucket: {bucket}")
+    if not minio_client.bucket_exists(datalake_cfg["bucket_name"]):
+        minio_client.make_bucket(datalake_cfg["bucket_name"])
+        print(f"✅ Created bucket: {datalake_cfg['bucket_name']}")
     else:
-        logger.info(f"Bucket '{bucket}' already exists")
+        print(f"ℹ️ Bucket {datalake_cfg['bucket_name']} already exists")
 
-    upload_directory_to_minio(
+    upload_local_directory_to_minio(
         minio_client,
-        local_path=PROJECT_ROOT / data_cfg["deltalake_folder_path"],
-        bucket_name=bucket,
-        minio_prefix=datalake_cfg["folder_name"],
+        data_cfg["delta_path"],
+        datalake_cfg["bucket_name"],
+        datalake_cfg["folder_name"],
     )
-    logger.success("Upload complete.")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-.PHONY: help up-all down-all up-monitoring up-airflow up-datalake up-kafka up-dvc
+.PHONY: help up-all down-all up-monitoring up-airflow up-datalake up-kafka up-dvc create-network delete-network install
 
 help:
 	@echo "Quản lý Toxic Comment Data Platform"
@@ -11,6 +11,7 @@ help:
 	@echo "  make up-datalake  - Bật Data Lake (MinIO, Postgres)"
 	@echo "  make up-kafka     - Bật Streaming (Kafka, Zookeeper)"
 	@echo "  make up-dvc       - Bật DVC (remote setup)"
+	@echo "  make install      - Cài đặt thư viện Python từ requirements.txt"
 
 # Khởi động từng phần riêng biệt
 up-datalake:
@@ -46,8 +47,24 @@ down-dvc:
 
 # Khởi động / tắt tất cả
 up-all:
-	docker network create shared-network || true
+	docker network create toxic-platform-network || true
 	docker compose -f data_lake_compose.yml -f stream_kafka_compose.yaml -f airflow_compose.yaml -f monitoring-compose.yml -f dvc_compose.yml up -d
 
 down-all:
 	docker compose -f data_lake_compose.yml -f stream_kafka_compose.yaml -f airflow_compose.yaml -f monitoring-compose.yml -f dvc_compose.yml down
+
+# Tạo network
+create-network:
+	docker network create toxic-platform-network
+
+# Xóa network
+delete-network:
+	docker network rm toxic-platform-network
+
+# Cài đặt thư viện Python
+install:
+	pip install -r requirements.txt
+	pip install -r airflow/requirements.txt
+	pip install -r batch_processing/requirements.txt
+	pip install -r model_experiment/requirements.txt
+	pip install -r stream_processing/requirements.txt
