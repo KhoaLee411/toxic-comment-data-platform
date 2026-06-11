@@ -1,69 +1,35 @@
 import sys
 from pathlib import Path
+from typing import Iterator
 
+import pandas as pd
 from loguru import logger
 from minio import Minio
-from sqlalchemy import create_engine, text
-from transformers import AutoTokenizer
-
+from pyspark.sql.types import StringType, StructField, StructType
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BATCH_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
-sys.path.insert(0, str(BATCH_DIR))
-
 from minio_config import load_minio_config
 from spark_session import create_spark_session
 from utils.load_config_from_file import load_cfg
 
-CFG_FILE = PROJECT_ROOT / "configs" / "config.yml"
-cfg = load_cfg(str(CFG_FILE))
+CFG_FILE = "./configs/config.yml"
+cfg = load_cfg(CFG_FILE)
 
-logger.info(f"Loading tokenizer: {cfg['model']['name']}")
-tokenizer = AutoTokenizer.from_pretrained(cfg["model"]["name"])
+def tokenize_partition(iterator: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
+    from transformers import AutoTokenizer
 
+    local_tokenizer = AutoTokenizer.from_pretrained(cfg["model"]["name"])
 
-def tokenize_batch(spark_df):
-    logger.info("Converting Spark DataFrame to Pandas for tokenization...")
-    pandas_df = spark_df.toPandas()
-    logger.info(f"Tokenizing {len(pandas_df)} rows...")
+    for pdf in iterator:
+        encoded = local_tokenizer(
+            pdf["comment_text"].tolist(),
+            max_length=cfg["model"]["max_length"],
+            truncation=True,
+        )
+        pdf["input_ids"] = [str(ids) for ids in encoded["input_ids"]]
+        pdf["attention_mask"] = [str(mask) for mask in encoded["attention_mask"]]
+        yield pdf.drop(columns=["comment_text"])
 
-    encoded = tokenizer(
-        pandas_df["comment_text"].tolist(),
-        max_length=cfg["model"]["max_length"],
-        truncation=True,
-    )
-    pandas_df["input_ids"] = [str(ids) for ids in encoded["input_ids"]]
-    pandas_df["attention_mask"] = [str(mask) for mask in encoded["attention_mask"]]
-    logger.success("Tokenization complete.")
-    return pandas_df.drop(columns=["comment_text"])
-
-
-def _count_rows(conn, schema: str, table: str) -> int:
-    try:
-        result = conn.execute(text(f'SELECT COUNT(*) FROM "{schema}"."{table}"'))
-        return int(result.scalar() or 0)
-    except Exception as e:
-        logger.warning(f"Row count failed for {schema}.{table}: {e}")
-        return 0
-
-
-def write_to_staging(pandas_df, table_name: str, engine, schema: str):
-    with engine.begin() as conn:
-        before = _count_rows(conn, schema, table_name)
-    logger.info(f"Inserting {len(pandas_df)} rows into {schema}.{table_name} (currently {before} rows)...")
-
-    pandas_df.to_sql(
-        name=table_name,
-        con=engine,
-        schema=schema,
-        if_exists="append",
-        index=False,
-        method="multi",
-    )
-
-    with engine.begin() as conn:
-        after = _count_rows(conn, schema, table_name)
-    logger.success(f"Done: {schema}.{table_name} now has {after} rows (+{after - before})")
 
 
 def list_minio_folders(minio_client: Minio, bucket: str, prefix: str) -> list[str]:
@@ -81,9 +47,12 @@ def list_minio_folders(minio_client: Minio, bucket: str, prefix: str) -> list[st
 def main():
     datalake_cfg = cfg["datalake"]
     spark_cfg = cfg["spark"]
-    postgres_cfg = cfg["dw_postgres"]
+    postgres_cfg = cfg["dwh"]
 
-    spark = create_spark_session(memory=spark_cfg["executor_memory"])
+    spark = create_spark_session(
+        memory=spark_cfg["executor_memory"],
+        extra_packages="org.postgresql:postgresql:42.7.3",
+    )
     load_minio_config(spark.sparkContext, datalake_cfg)
 
     minio_client = Minio(
@@ -91,11 +60,6 @@ def main():
         access_key=datalake_cfg["access_key"],
         secret_key=datalake_cfg["secret_key"],
         secure=datalake_cfg.get("secure", False),
-    )
-
-    engine = create_engine(
-        f"postgresql://{postgres_cfg['user']}:{postgres_cfg['password']}"
-        f"@{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}"
     )
 
     prefix = datalake_cfg["folder_name"] + "/"
@@ -107,13 +71,30 @@ def main():
         try:
             df = spark.read.parquet(parquet_path)
             logger.info(f"Read {df.count()} rows, columns: {df.columns}")
-            processed_df = tokenize_batch(df)
-            write_to_staging(
-                processed_df,
-                table_name=folder,
-                engine=engine,
-                schema=postgres_cfg["staging_schema"],
+            
+            output_schema = StructType(
+                [f for f in df.schema.fields if f.name != "comment_text"]
+                + [
+                    StructField("input_ids", StringType(), True),
+                    StructField("attention_mask", StringType(), True),
+                ]
             )
+
+            processed_df = df.mapInPandas(tokenize_partition, schema=output_schema)
+            
+    
+            processed_df.repartition(4).write.jdbc(
+                url=f"jdbc:postgresql://{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}",
+                table=f"{postgres_cfg['staging_schema']}.{folder}",
+                mode="append",
+                properties={
+                    "user": postgres_cfg["user"],
+                    "password": postgres_cfg["password"],
+                    "driver": "org.postgresql.Driver",
+                    "batchsize": "10000"
+                },
+            )
+            logger.success(f"Successfully processed and wrote folder '{folder}' to staging.")
         except Exception as e:
             logger.error(f"Failed to process folder '{folder}': {e}")
 
