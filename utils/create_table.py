@@ -3,15 +3,14 @@ from pathlib import Path
 
 from loguru import logger
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 from load_config_from_file import load_cfg
 from postgresql_client import PostgreSQLClient
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CFG_FILE = PROJECT_ROOT / "configs" / "config.yml"
+CFG_FILE = "./configs/config.yml"
 
-# (table_name, ddl) — explicit name avoids fragile DDL string parsing
 TABLE_DEFINITIONS: list[tuple[str, str]] = [
+    # Bảng staging.text_comment_1: Lưu trữ dữ liệu text đã được mã hóa (tokenized) tạm thời.
+    # Các trường 'input_ids' và 'attention_mask' là định dạng chuẩn đầu vào cho các mô hình NLP (như BERT, RoBERTa).
     ("staging.text_comment_1", """
         CREATE TABLE IF NOT EXISTS staging.text_comment_1 (
             labels         BIGINT,
@@ -19,6 +18,8 @@ TABLE_DEFINITIONS: list[tuple[str, str]] = [
             attention_mask TEXT
         );
     """),
+    # Bảng staging.text_comment_2: Tương tự như text_comment_1, đóng vai trò làm bảng tạm thứ 2
+    # để phục vụ cho các luồng xử lý dữ liệu song song hoặc chia tách batch trước khi dbt tổng hợp lại.
     ("staging.text_comment_2", """
         CREATE TABLE IF NOT EXISTS staging.text_comment_2 (
             labels         BIGINT,
@@ -26,6 +27,8 @@ TABLE_DEFINITIONS: list[tuple[str, str]] = [
             attention_mask TEXT
         );
     """),
+    # Bảng stream.raw_comments: Lưu trữ bình luận thô (chưa qua tokenized) theo thời gian thực (real-time).
+    # Bảng này thường được đổ dữ liệu trực tiếp từ Kafka/Debezium vào hệ thống.
     ("stream.raw_comments", """
         CREATE TABLE IF NOT EXISTS stream.raw_comments (
             id           SERIAL PRIMARY KEY,
@@ -34,6 +37,9 @@ TABLE_DEFINITIONS: list[tuple[str, str]] = [
             created_at   TIMESTAMP DEFAULT NOW()
         );
     """),
+    # Bảng production.comments: Bảng đích (Data Warehouse/Production) lưu trữ dữ liệu sạch cuối cùng.
+    # Dữ liệu từ các bảng staging và stream sau khi được dbt làm sạch & tokenized sẽ được hợp nhất vào đây
+    # để sẵn sàng cho việc huấn luyện (train) Machine Learning hoặc Data Analysis.`
     ("production.comments", """
         CREATE TABLE IF NOT EXISTS production.comments (
             id             SERIAL PRIMARY KEY,
@@ -49,19 +55,23 @@ TABLE_DEFINITIONS: list[tuple[str, str]] = [
 def main():
     cfg = load_cfg(str(CFG_FILE))["dw_postgres"]
 
-    with PostgreSQLClient(
-        database=cfg["database"],
-        user=cfg["user"],
-        password=cfg["password"],
-        host=cfg.get("host", "localhost"),
-        port=cfg.get("port", 5433),
-    ) as pc:
-        for table_name, ddl in TABLE_DEFINITIONS:
-            try:
-                pc.execute_query(ddl)
-                logger.success(f"Table '{table_name}' ready.")
-            except Exception as e:
-                logger.error(f"Failed to create table '{table_name}': {e}")
+    try:
+        with PostgreSQLClient(
+            database=cfg["database"],
+            user=cfg["user"],
+            password=cfg["password"],
+            host=cfg.get("host", "localhost"),
+            port=cfg.get("port", 5433),
+        ) as pc:
+            for table_name, ddl in TABLE_DEFINITIONS:
+                try:
+                    pc.execute_query(ddl)
+                    logger.success(f"Table '{table_name}' ready.")
+                except Exception as e:
+                    logger.error(f"Failed to create table '{table_name}': {e}")
+    except Exception as e:
+        logger.error(f"Failed to connect to database: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

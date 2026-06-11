@@ -6,13 +6,15 @@ datalake:
   secret_key: ${MINIO_ROOT_PASSWORD}
   secure: false
 
-dw_postgres:
+dwh:
   host: localhost
   port: 5433
   database: ${POSTGRES_DB}
   user: ${POSTGRES_USER}
   password: ${POSTGRES_PASSWORD}
   staging_schema: staging
+  production_schema: production
+  stream_schema: stream
 
 data:
   csv_path: ./data_local/raw
