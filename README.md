@@ -1,10 +1,10 @@
 # Toxic Comment Data Platform
 
-A robust, production-ready data platform implementing a **Lambda Architecture** for ingesting, validating, transforming, and serving toxic-comment text data. It supports both **batch** (historical data) and **stream** (real-time events) processing pipelines.
+A robust, production-ready data platform implementing a **Lambda Architecture** for ingesting, validating, transforming, and serving toxic-comment text data. It supports both **batch** (historical data) and **stream** (real-time events) processing pipelines, alongside full **MLOps** model lifecycle management and **Monitoring**.
 
 ## 🚀 Architecture Overview
 
-The platform uses best-in-class data engineering tools to process raw CSVs (`data_local/raw/text_comment_1.csv` & `text_comment_2.csv`) into a final, clean `production.comments` table.
+The platform uses best-in-class data engineering tools to process raw CSVs (`data_local/raw/text_comment_1.csv` & `text_comment_2.csv`) into a final, clean `production.comments` table, trains ML models on it, and monitors the entire infrastructure.
 
 1. **Batch Pipeline (Historical Data)**:
    - **Source**: `text_comment_1.csv`
@@ -19,8 +19,14 @@ The platform uses best-in-class data engineering tools to process raw CSVs (`dat
    - **Great Expectations (GX)** strictly validates data inside `staging.batch` and `staging.streaming`.
 4. **Data Transformation (dbt)**:
    - **dbt** acts as the unification layer, merging both staging tables, assigning UUIDs where needed, and upserting clean data into the final `production.comments` Data Warehouse table.
-5. **Orchestration**:
-   - **Apache Airflow** schedules and triggers the pipeline steps.
+5. **Model Experimentation (MLOps)**:
+   - **DVC** orchestrates the ML pipeline (Extract → Train → Evaluate → Register).
+   - **MLflow** tracks metrics, parameters, and model registry artifacts.
+6. **Orchestration**:
+   - **Apache Airflow** schedules and triggers the end-to-end pipeline (`data_prep → data_quality → data_transform → model_exp`).
+7. **Monitoring & Logging**:
+   - **Prometheus & Grafana**: System and container metrics.
+   - **ELK Stack (Elasticsearch, Logstash, Kibana) + Filebeat**: Centralized system log aggregation.
 
 ## 📁 Repository Structure
 
@@ -30,6 +36,8 @@ The platform uses best-in-class data engineering tools to process raw CSVs (`dat
 - `data_transformation/` - **dbt** project containing `schema.yml` and `comments.sql`.
 - `data_validation/` - **Great Expectations** project and `validate.py` script.
 - `debezium/` - Connector configs and registration scripts.
+- `model_experiment/` - ML training scripts split into DVC stages.
+- `monitoring/` - Configuration for Prometheus, Grafana, Alertmanager, ELK, and Filebeat.
 - `stream_processing/` - PySpark Streaming jobs reading from Kafka.
 - `utils/` - Shared scripts like `create_table.py` and `simulate_stream.py`.
 
@@ -37,8 +45,9 @@ The platform uses best-in-class data engineering tools to process raw CSVs (`dat
 
 - **`data_lake_compose.yml`**: MinIO (`:9000`/`:9001`) + PostgreSQL (`:5433`).
 - **`stream_kafka_compose.yaml`**: Zookeeper, Kafka, Schema Registry, Debezium, Kafka UI.
-- **`airflow_compose.yaml`**: Apache Airflow services.
-- **`monitoring-compose.yml`**: Prometheus & Grafana (Optional).
+- **`airflow_compose.yaml`**: Apache Airflow orchestration.
+- **`monitoring-compose.yml`**: Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor.
+- **`elk-compose.yml`**: Elasticsearch, Logstash, Kibana, Filebeat.
 
 *(All stacks communicate seamlessly via the external `toxic-platform-network`)*
 
@@ -49,9 +58,18 @@ The platform uses best-in-class data engineering tools to process raw CSVs (`dat
 # Create shared external network
 docker network create toxic-platform-network
 
-# Start core infrastructure (Postgres, MinIO, Kafka)
+# Copy environment variables
+cp .env.example .env
+cp .env.monitoring.example .env.monitoring
+
+# Start core infrastructure
 docker compose -f data_lake_compose.yml up -d
 docker compose -f stream_kafka_compose.yaml up -d
+
+# Start Airflow & Monitoring
+docker compose -f airflow_compose.yaml up -d --build
+docker compose --env-file .env.monitoring -f monitoring-compose.yml up -d
+docker compose --env-file .env.monitoring -f elk-compose.yml up -d
 ```
 
 ### 2. Initialization
@@ -64,34 +82,28 @@ python utils/create_schema.py
 python utils/create_table.py
 ```
 
-### 3. Execution
+### 3. Execution via Airflow
+The entire pipeline is fully automated. Open the Airflow Web UI (`http://localhost:8082`) and trigger the `end_to_end_ml_pipeline` DAG.
 
-**Batch Pipeline:**
+### 4. Manual Execution (Optional)
+If you prefer running components manually:
 ```bash
-# Process historical data
+# Batch Data Prep
 python batch_processing/main.py
-```
 
-**Stream Pipeline:**
-```bash
-# Terminal 1: Start PySpark Streaming consumer
-python stream_processing/main.py
+# Data Validation
+python data_validation/validate.py --source postgres
+python data_validation/validate.py --source stream
 
-# Terminal 2: Start generating fake stream events
-python utils/simulate_stream.py
-```
+# Data Transformation
+cd data_transformation && dbt run --profiles-dir . && cd ..
 
-**Validation & Transformation (Orchestrated via Airflow or Manual):**
-```bash
-# 1. Run Data Quality Checks
-python data_validation/validate.py
-
-# 2. Run dbt to merge staging to production
-cd data_transformation && dbt run --profiles-dir .
+# ML Experimentation (DVC)
+dvc repro
 ```
 
 ## 📝 Coding Guidelines & Gotchas
-- **Environment Variables**: Create a `.env` file based on `.env.example` in the root directory. This is ignored by git.
-- **`gx/` Config**: The GX context dynamically uses `data_validation/gx` and resolves credentials via python strings.
+- **Environment Variables**: `.env` and `.env.monitoring` handle sensitive secrets and are ignored by git. Keep them populated locally.
+- **DVC Tracking**: Only `metrics/` is committed to git. Checkpoints are cached remotely.
 - **Lambda Strict Isolation**: `text_comment_1.csv` is strictly for batch. `text_comment_2.csv` is strictly for stream simulation to avoid data duplication.
-- **Postgres Arrays as JSON**: Data is stored as JSON text arrays (`[101, 2023]`), which is correctly handled by dbt and Great Expectations.
+- **Monitoring Alerts**: Alertmanager routes to Discord based on `DISCORD_WEBHOOK_URL` in `.env.monitoring`.
