@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: staging
+    schema: staging
+    tables:
+      - name: batch
+      - name: streaming
+
+models:
+  - name: comments
+    description: "Merged production comments from batch and streaming sources."
+    columns:
+      - name: id
+        tests:
+          - unique
+          - not_null
+      - name: labels
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+              quote: false

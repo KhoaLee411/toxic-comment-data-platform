@@ -19,5 +19,4 @@ clean-targets:
 models:
   data_transformation:
     +materialized: table
-    transform:
-      +schema: production   # models/transform/ → writes to `production` schema
+    +schema: production
