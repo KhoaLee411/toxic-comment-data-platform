@@ -1,0 +1,156 @@
+version: "3.8"
+
+# =============================================================================
+# ELK Stack — Optional log aggregation
+# Run with: docker compose -f elk-compose.yml up -d
+# Requires the .env file with ELASTIC_VERSION and passwords defined.
+# =============================================================================
+
+networks:
+  elk:
+    name: elk-network
+    driver: bridge
+  toxic-platform-network:
+    external: true
+
+volumes:
+  elasticsearch_data:
+    driver: local
+  kibana_data:
+    driver: local
+  logstash_data:
+    driver: local
+
+services:
+  # ---------------------------------------------------------------------------
+  # ELK Setup — creates roles & users on first boot
+  # ---------------------------------------------------------------------------
+  elk-setup:
+    build:
+      context: ./monitoring/elk/setup
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    container_name: elk-setup
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Variable ELASTIC_PASSWORD is required}
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:?Variable LOGSTASH_INTERNAL_PASSWORD is required}
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:?Variable KIBANA_SYSTEM_PASSWORD is required}
+    networks:
+      - elk
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Elasticsearch
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    build:
+      context: ./monitoring/elk/elasticsearch
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Variable ELASTIC_PASSWORD is required}
+      discovery.type: single-node
+    volumes:
+      - ./monitoring/elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - elk
+      - toxic-platform-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          curl -sf http://localhost:9200/_cluster/health \
+            | grep -qE '"status":"(green|yellow)"'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ---------------------------------------------------------------------------
+  # Kibana
+  # ---------------------------------------------------------------------------
+  kibana:
+    build:
+      context: ./monitoring/elk/kibana
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    container_name: kibana
+    restart: unless-stopped
+    environment:
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:?Variable KIBANA_SYSTEM_PASSWORD is required}
+    volumes:
+      - ./monitoring/elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - kibana_data:/usr/share/kibana/data
+    ports:
+      - "5601:5601"
+    networks:
+      - elk
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          curl -sf http://localhost:5601/api/status \
+            | grep -q '"overall":{"level":"available"'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # ---------------------------------------------------------------------------
+  # Logstash
+  # ---------------------------------------------------------------------------
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${ELASTIC_VERSION}
+    container_name: logstash
+    restart: unless-stopped
+    environment:
+      LS_JAVA_OPTS: "-Xms256m -Xmx256m"
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:?Variable LOGSTASH_INTERNAL_PASSWORD is required}
+    volumes:
+      - ./monitoring/elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./monitoring/elk/logstash/config/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
+      - ./monitoring/elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - logstash_data:/usr/share/logstash/data
+    ports:
+      - "5044:5044" # Beats input
+      - "9600:9600" # Logstash monitoring API
+    networks:
+      - elk
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9600/_node/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ---------------------------------------------------------------------------
+  # Filebeat
+  # ---------------------------------------------------------------------------
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:${ELASTIC_VERSION}
+    container_name: filebeat
+    user: root # Must be root to read /var/lib/docker/containers
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/elk/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - elk
+    depends_on:
+      logstash:
+        condition: service_healthy
