@@ -6,6 +6,8 @@ Một nền tảng dữ liệu mạnh mẽ, sẵn sàng cho môi trường sản
 
 Nền tảng sử dụng các công cụ Data Engineering hàng đầu để xử lý các file CSV thô (`data_local/raw/text_comment_1.csv` & `text_comment_2.csv`) thành một bảng dữ liệu sạch duy nhất `production.comments`. Sau đó, hệ thống sẽ tự động huấn luyện mô hình Machine Learning trên dữ liệu này và giám sát toàn bộ tài nguyên hạ tầng.
 
+![Architecture Diagram](./images/toxic_platform_architecture.drawio.svg)
+
 1. **Luồng Xử Lý Batch (Dữ liệu Lịch Sử)**:
    - **Nguồn**: `text_comment_1.csv`
    - **Thu thập (Ingestion)**: Upload định dạng Parquet lên Data Lake **MinIO**.
@@ -49,11 +51,12 @@ Nền tảng sử dụng các công cụ Data Engineering hàng đầu để x�
 - **`monitoring-compose.yml`**: Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor.
 - **`elk-compose.yml`**: Elasticsearch, Logstash, Kibana, Filebeat.
 
-*(Tất cả các thành phần này giao tiếp mượt mà với nhau thông qua mạng ảo external: `toxic-platform-network`)*
+_(Tất cả các thành phần này giao tiếp mượt mà với nhau thông qua mạng ảo external: `toxic-platform-network`)_
 
 ## 🚦 Hướng Dẫn Chạy Hệ Thống
 
 ### 1. Chuẩn bị (Prerequisites)
+
 ```bash
 # Tạo mạng dùng chung cho các container
 docker network create toxic-platform-network
@@ -73,6 +76,7 @@ docker compose --env-file .env.monitoring -f elk-compose.yml up -d
 ```
 
 ### 2. Khởi tạo (Initialization)
+
 ```bash
 # Đăng ký Connector CDC với Debezium
 bash debezium/run.sh register_connector debezium/configs/toxic_comments_cdc.json
@@ -83,10 +87,13 @@ python utils/create_table.py
 ```
 
 ### 3. Vận Hành Tự Động Qua Airflow
+
 Toàn bộ luồng xử lý đã được tự động hóa. Hãy mở giao diện **Airflow Web UI** (`http://localhost:8082`) và kích hoạt (Trigger) DAG có tên là `end_to_end_ml_pipeline`.
 
 ### 4. Vận Hành Thủ Công (Tùy chọn)
+
 Nếu bạn muốn chạy từng bước bằng tay để kiểm tra:
+
 ```bash
 # Xử lý Batch
 python batch_processing/main.py
@@ -103,11 +110,15 @@ dvc repro
 ```
 
 ### 5. Xóa Sạch Dữ Liệu & Chạy Lại Từ Đầu (Reset System)
+
 Nếu bạn muốn dọn dẹp sạch sẽ toàn bộ database, logs, model checkpoints và chạy lại hệ thống từ một trang giấy trắng, hãy sử dụng Makefile:
+
 ```bash
 make clean-all
 ```
+
 Lệnh này sẽ tự động:
+
 - Tắt tất cả các Container.
 - Xóa toàn bộ Docker Volumes (`postgres-db-volume`, `grafana_data`, `elasticsearch_data`,...).
 - Xóa các thư mục lưu dữ liệu trên máy chủ (`./data`, `./mlruns`, `./data_local/delta_lake`).
@@ -115,6 +126,7 @@ Lệnh này sẽ tự động:
 Sau khi xóa xong, bạn chỉ cần quay lại bước 1 và chạy `make up-all` để bắt đầu lại.
 
 ## 📝 Quy Ước Lập Trình & Lưu Ý
+
 - **Biến Môi Trường (Env Variables)**: `.env` và `.env.monitoring` chứa các thông tin nhạy cảm và sẽ bị bỏ qua bởi git (gitignore). Hãy chắc chắn bạn đã điền đủ thông tin ở máy tính cá nhân.
 - **Theo Dõi DVC**: Chỉ có thư mục `metrics/` được commit lên Git. Các file Checkpoint của model được cache lại ở xa (Remote Storage).
 - **Phân Lập Kiến Trúc Lambda Tách Bạch**: `text_comment_1.csv` chỉ được dùng riêng cho Batch. `text_comment_2.csv` chỉ được dùng để giả lập luồng Stream. Điều này giúp ngăn chặn hoàn toàn việc nhân đôi dữ liệu.
