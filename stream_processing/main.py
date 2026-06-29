@@ -53,6 +53,8 @@ def main():
         "pipeline.jars",
         f"file://{JARS_PATH}/flink-sql-connector-kafka-3.2.0-1.18.jar;"
         + f"file://{JARS_PATH}/flink-json-1.18.0.jar;"
+        + f"file://{JARS_PATH}/flink-sql-avro-confluent-registry-1.18.0.jar;"
+        + f"file://{JARS_PATH}/flink-avro-1.18.0.jar;"
         + f"file://{JARS_PATH}/flink-connector-jdbc-3.2.0-1.18.jar;"
         + f"file://{JARS_PATH}/postgresql-42.7.7.jar",
     )
@@ -60,8 +62,8 @@ def main():
     # Đăng ký UDF
     t_env.create_temporary_system_function("hf_tokenize", hf_tokenize)
 
-    # ---- Kafka source (Debezium JSON) ----
-    logger.info(f"Connecting to Kafka topic: {stream_cfg['topic']}")
+    # ---- Kafka source (Debezium Avro) ----
+    logger.info(f"Connecting to Kafka topic: {stream_cfg['topic']} with Avro format")
     t_env.execute_sql(
         f"""
         CREATE TABLE m2_streaming_src (
@@ -73,15 +75,12 @@ def main():
         'properties.bootstrap.servers' = '{stream_cfg['kafka_bootstrap_servers']}',
         'properties.group.id' = 'flink-staging-consumer-001',
         'scan.startup.mode' = 'earliest-offset',
-        'value.format' = 'debezium-json',
-        'value.debezium-json.schema-include' = 'true',
-        'value.debezium-json.ignore-parse-errors' = 'false'
+        'value.format' = 'debezium-avro-confluent',
+        'value.debezium-avro-confluent.schema-registry.url' = 'http://localhost:8081'
         )
     """
     )
 
-    from pyflink.table.expressions import call, col, lit, current_timestamp
-    
     # ---- JDBC sink ----
     jdbc_url = f"jdbc:postgresql://{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}"
     target_table = "staging.streaming"
@@ -94,9 +93,6 @@ def main():
           labels INT,
           input_ids STRING,
           attention_mask STRING,
-          lineage_source_file STRING,
-          lineage_run_id STRING,
-          lineage_processed_at TIMESTAMP(3),
           PRIMARY KEY (id) NOT ENFORCED
         ) WITH (
           'connector' = 'jdbc',
@@ -122,9 +118,6 @@ def main():
         col("labels"),
         col("tok").get("input_ids").alias("input_ids"),
         col("tok").get("attention_mask").alias("attention_mask"),
-        lit("kafka:stream.raw_comments").alias("lineage_source_file"),
-        lit("flink_streaming_job").alias("lineage_run_id"),
-        current_timestamp().alias("lineage_processed_at")
     )
 
     # Execute continuous insert
