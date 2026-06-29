@@ -64,9 +64,9 @@ def main():
     logger.info(f"Connecting to Kafka topic: {stream_cfg['topic']} with Avro format")
     t_env.execute_sql(
         f"""
-        CREATE TABLE m2_streaming_src (
+        CREATE TABLE kafka_streaming_src (
         comment_text STRING,
-        labels BIGINT
+        labels INT
         ) WITH (
         'connector' = 'kafka',
         'topic' = '{stream_cfg['topic']}',
@@ -88,7 +88,7 @@ def main():
         f"""
         CREATE TABLE staging_streaming_sink (
           id STRING NOT NULL,
-          labels BIGINT,
+          labels INT,
           input_ids STRING,
           attention_mask STRING,
           PRIMARY KEY (id) NOT ENFORCED
@@ -103,7 +103,7 @@ def main():
     """
     )
 
-    src = t_env.from_path("m2_streaming_src")
+    src = t_env.from_path("kafka_streaming_src")
     logger.info("Source schema:")
     src.print_schema()
 

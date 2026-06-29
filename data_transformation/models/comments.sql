@@ -9,7 +9,7 @@
 WITH batch_data AS (
   SELECT
     md5(input_ids || labels::text)::varchar(255) AS id, -- Generate deterministic ID for batch
-    labels::bigint,
+    labels::int,
     input_ids::text,
     attention_mask::text
   FROM {{ source('staging', 'batch') }}
@@ -19,7 +19,7 @@ WITH batch_data AS (
 stream_data AS (
   SELECT
     id::varchar(255),
-    labels::bigint,
+    labels::int,
     input_ids::text,
     attention_mask::text
   FROM {{ source('staging', 'streaming') }}
