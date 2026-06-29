@@ -8,6 +8,8 @@
     "database.password": "${POSTGRES_PASSWORD}",
     "database.dbname": "${POSTGRES_DB}",
     "plugin.name": "pgoutput",
+    "publication.name": "dbz_publication",
+    "publication.autocreate.mode": "disabled",
     "table.include.list": "stream.raw_comments",
     "database.server.name": "toxic_comments"
   }

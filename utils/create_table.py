@@ -70,6 +70,25 @@ def main():
                     logger.success(f"Table '{table_name}' ready.")
                 except Exception as e:
                     logger.error(f"Failed to create table '{table_name}': {e}")
+                    
+            # Create publication for Debezium pgoutput
+            try:
+                # Set Replica Identity so Debezium can capture before-state if needed
+                pc.execute_query("ALTER TABLE stream.raw_comments REPLICA IDENTITY FULL;")
+                
+                # Debezium's default publication name is dbz_publication
+                # We need to manually create it because plugin.name = pgoutput
+                # First, drop it if it exists to avoid errors on recreation
+                try:
+                    pc.execute_query("DROP PUBLICATION IF EXISTS dbz_publication;")
+                except:
+                    pass
+                    
+                pc.execute_query("CREATE PUBLICATION dbz_publication FOR TABLE stream.raw_comments;")
+                logger.success("Publication 'dbz_publication' ready for Debezium CDC.")
+            except Exception as e:
+                logger.error(f"Failed to setup publication for CDC: {e}")
+                
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
         sys.exit(1)
