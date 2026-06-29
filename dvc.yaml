@@ -1,0 +1,44 @@
+stages:
+  extract:
+    cmd: python model_experiment/extract_data.py
+    deps:
+      - model_experiment/extract_data.py
+      - configs/config.yml
+    outs:
+      - data/production/cleaned_data.csv:
+          cache: true
+
+  train:
+    cmd: python model_experiment/train.py
+    deps:
+      - model_experiment/train.py
+      - model_experiment/model.py
+      - model_experiment/dataloader.py
+      - model_experiment/config.py
+      - data/production/cleaned_data.csv
+    outs:
+      - model_checkpoints/:
+          cache: true
+    metrics:
+      - metrics/train_metrics.json:
+          cache: false
+
+  evaluate:
+    cmd: python model_experiment/evaluate.py
+    deps:
+      - model_experiment/evaluate.py
+      - model_experiment/model.py
+      - model_experiment/config.py
+      - data/production/cleaned_data.csv
+      - model_checkpoints/
+    metrics:
+      - metrics/eval_metrics.json:
+          cache: false
+
+  register:
+    cmd: python model_experiment/register_model.py
+    deps:
+      - model_experiment/register_model.py
+      - model_experiment/config.py
+      - model_checkpoints/
+      - metrics/eval_metrics.json
