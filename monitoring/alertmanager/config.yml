@@ -1,8 +1,78 @@
-route:
-  repeat_interval: 15s # Time interval between consecutive notifications for the same alert
-  receiver: discord
+# =============================================================================
+# Alertmanager Configuration — Toxic Comment Platform
+# =============================================================================
 
+global:
+  resolve_timeout: 5m # Time to wait before declaring an alert resolved
+
+# -----------------------------------------------------------------------
+# Inhibition rules — suppress lower-severity alerts when a critical one fires
+# -----------------------------------------------------------------------
+inhibit_rules:
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ["alertname", "instance"]
+
+# -----------------------------------------------------------------------
+# Templates
+# -----------------------------------------------------------------------
+templates: []
+
+# -----------------------------------------------------------------------
+# Routing tree
+# -----------------------------------------------------------------------
+route:
+  # Default grouping: group alerts by name + instance so one notification
+  # is sent per unique (alert, host) pair, not one per label combination.
+  group_by: ["alertname", "instance", "severity"]
+  group_wait: 30s # Wait before sending the first notification
+  group_interval: 5m # Wait before sending a changed group
+  repeat_interval: 4h # Re-notify if the alert is still firing
+  receiver: discord-critical
+
+  routes:
+    # Critical alerts: notify immediately
+    - matchers:
+        - severity="critical"
+      receiver: discord-critical
+      repeat_interval: 1h
+
+    # Warning alerts: slightly delayed, less frequent
+    - matchers:
+        - severity="warning"
+      receiver: discord-warning
+      group_wait: 1m
+      repeat_interval: 6h
+
+# -----------------------------------------------------------------------
+# Receivers
+# -----------------------------------------------------------------------
 receivers:
-- name: discord
-  discord_configs:
-  - webhook_url: https://discord.com/api/webhooks/1406183167211208734/F1iMAKbwN9SqAE0k3QSgwf0RXs-OTOvdHBLYJLKA6A6D89PkhOquz9mwjEMZmeBrIG6I
+  - name: discord-critical
+    discord_configs:
+      - webhook_url: "${DISCORD_WEBHOOK_URL}"
+        title: |
+          🔴 [CRITICAL] {{ .GroupLabels.alertname }}
+        message: |
+          {{ range .Alerts }}
+          **Instance:** {{ .Labels.instance }}
+          **Summary:** {{ .Annotations.summary }}
+          **Detail:** {{ .Annotations.description }}
+          **Since:** {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          {{ end }}
+        send_resolved: true
+
+  - name: discord-warning
+    discord_configs:
+      - webhook_url: "${DISCORD_WEBHOOK_URL}"
+        title: |
+          🟡 [WARNING] {{ .GroupLabels.alertname }}
+        message: |
+          {{ range .Alerts }}
+          **Instance:** {{ .Labels.instance }}
+          **Summary:** {{ .Annotations.summary }}
+          **Detail:** {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true

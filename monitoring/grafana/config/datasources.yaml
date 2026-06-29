@@ -1,16 +1,24 @@
-# config file version
 apiVersion: 1
 
-# list of datasources that should be deleted from the database
+# Remove stale datasources on restart
 deleteDatasources:
   - name: Prometheus
     orgId: 1
 
-# list of datasources to insert/update depending
-# what's available in the database
 datasources:
   - name: Prometheus
     type: prometheus
+    uid: prometheus-ds
     access: proxy
     url: http://prometheus:9090
     isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: "15s" # Match global scrape_interval
+      queryTimeout: "60s"
+      httpMethod: POST # POST is more efficient for large queries
+      prometheusType: Prometheus
+      prometheusVersion: "2.51.0"
+      cacheLevel: "High"
+      incrementalQuerying: true
+      exemplarTraceIdDestinations: []

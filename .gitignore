@@ -7,6 +7,7 @@ my-note.md
 .env
 .env.local
 .env.production
+.env.monitoring
 
 # Python
 __pycache__/

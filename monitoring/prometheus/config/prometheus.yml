@@ -1,30 +1,65 @@
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 15s # How often to scrape targets by default
+  evaluation_interval: 15s # How often to evaluate alerting rules
+  scrape_timeout: 10s # Scrape timeout (must be <= scrape_interval)
+  external_labels:
+    monitor: "toxic-platform"
+    environment: "production"
 
-# Load and evaluate rules in this file every 'evaluation_interval' seconds.
+# -----------------------------------------------------------------------
+# Rule files — alert-rules.yml is loaded at startup and re-evaluated
+# -----------------------------------------------------------------------
 rule_files:
   - alert-rules.yml
 
+# -----------------------------------------------------------------------
+# Alertmanager integration
+# -----------------------------------------------------------------------
 alerting:
   alertmanagers:
-  - static_configs:
-    - targets:
-      - "alertmanager:9093"
+    - static_configs:
+        - targets:
+            - "alertmanager:9093"
+      timeout: 10s
+      api_version: v2
 
-# A scrape configuration containing exactly one endpoint to scrape.
+# -----------------------------------------------------------------------
+# Scrape configurations
+# -----------------------------------------------------------------------
 scrape_configs:
-  - job_name: 'node'
-    scrape_interval: 5s
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    scrape_interval: 30s
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ["localhost:9090"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "prometheus"
 
-  - job_name: 'cadvisor'
-    scrape_interval: 5s
-    static_configs:
-      - targets: ['cadvisor:8080']
-
-  - job_name: 'prometheus'
+  # Node Exporter — host-level metrics
+  - job_name: "node"
     scrape_interval: 10s
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["node-exporter:9100"]
+        labels:
+          host: "platform-host"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "platform-host"
+
+  # cAdvisor — per-container metrics
+  - job_name: "cadvisor"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      # Drop high-cardinality metrics we don't need
+      - source_labels: [__name__]
+        regex: "container_(tasks_state|memory_failures_total)"
+        action: drop
+      # Keep only running containers (skip empty name/pause containers)
+      - source_labels: [container_label_com_docker_compose_service]
+        regex: ""
+        action: drop
