@@ -101,7 +101,7 @@ def validate_postgres(context: FileDataContext) -> bool:
     print("\n=== Validating PostgreSQL batch source (batch) ===")
     validator = _build_validator(context, PG_DATASOURCE, PG_BATCH_ASSET, SUITE_NAME)
     print(validator.head())
-    apply_expectations(validator, pg_format=True)
+    apply_expectations(validator, pg_format=False)
     try:
         validator.save_expectation_suite(discard_failed_expectations=False)
     except Exception:
@@ -114,7 +114,7 @@ def validate_stream(context: FileDataContext) -> bool:
     validator = _build_validator(context, PG_DATASOURCE, PG_STREAM_ASSET, SUITE_NAME)
     print(validator.head())
     # Both are Postgres now, so pg_format=True
-    apply_expectations(validator, pg_format=True)
+    apply_expectations(validator, pg_format=False)
     try:
         validator.save_expectation_suite(discard_failed_expectations=False)
     except Exception:
