@@ -31,7 +31,7 @@ from utils.load_config_from_file import load_cfg
 # Constants
 # ---------------------------------------------------------------------------
 
-GX_ROOT = os.path.join(os.path.dirname(__file__), "gx")
+DATA_VALIDATION_DIR = os.path.dirname(__file__)
 
 PG_DATASOURCE   = "postgres_staging"
 PG_BATCH_ASSET  = "batch"
@@ -46,9 +46,7 @@ SUITE_NAME      = "toxic_comment_suite"
 import great_expectations as gx
 
 def _get_context() -> FileDataContext:
-    if not os.path.exists(GX_ROOT):
-        os.makedirs(GX_ROOT)
-    context = gx.get_context(mode="file", project_root_dir=GX_ROOT)
+    context = gx.get_context(mode="file", project_root_dir=DATA_VALIDATION_DIR)
     
     cfg_file = PROJECT_ROOT / "configs" / "config.yml"
     cfg = load_cfg(str(cfg_file))["dwh"]

@@ -1,0 +1,9 @@
+{
+  "expectations": [],
+  "id": "9fbe7ff2-5784-44dc-af79-231f48ed365c",
+  "meta": {
+    "great_expectations_version": "1.18.0"
+  },
+  "name": "toxic_comment_suite",
+  "notes": null
+}
