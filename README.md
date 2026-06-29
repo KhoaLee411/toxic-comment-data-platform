@@ -1,109 +1,109 @@
-# Toxic Comment Data Platform
+# Nền Tảng Dữ Liệu Phân Loại Bình Luận Độc Hại (Toxic Comment Data Platform)
 
-A robust, production-ready data platform implementing a **Lambda Architecture** for ingesting, validating, transforming, and serving toxic-comment text data. It supports both **batch** (historical data) and **stream** (real-time events) processing pipelines, alongside full **MLOps** model lifecycle management and **Monitoring**.
+Một nền tảng dữ liệu mạnh mẽ, sẵn sàng cho môi trường sản xuất (production-ready) áp dụng **Kiến trúc Lambda (Lambda Architecture)** để thu thập, kiểm định, chuyển đổi và cung cấp dữ liệu văn bản bình luận độc hại. Hệ thống hỗ trợ xử lý song song cả hai luồng **Batch** (dữ liệu lịch sử) và **Stream** (sự kiện thời gian thực), tích hợp toàn diện quy trình quản lý vòng đời mô hình **MLOps** và Hệ thống **Giám sát (Monitoring)**.
 
-## 🚀 Architecture Overview
+## 🚀 Tổng Quan Kiến Trúc
 
-The platform uses best-in-class data engineering tools to process raw CSVs (`data_local/raw/text_comment_1.csv` & `text_comment_2.csv`) into a final, clean `production.comments` table, trains ML models on it, and monitors the entire infrastructure.
+Nền tảng sử dụng các công cụ Data Engineering hàng đầu để xử lý các file CSV thô (`data_local/raw/text_comment_1.csv` & `text_comment_2.csv`) thành một bảng dữ liệu sạch duy nhất `production.comments`. Sau đó, hệ thống sẽ tự động huấn luyện mô hình Machine Learning trên dữ liệu này và giám sát toàn bộ tài nguyên hạ tầng.
 
-1. **Batch Pipeline (Historical Data)**:
-   - **Source**: `text_comment_1.csv`
-   - **Ingestion**: Uploaded as Parquet to **MinIO** Data Lake.
-   - **Processing**: **PySpark** reads from MinIO, tokenizes text using BERT, and writes to PostgreSQL `staging.batch`.
-2. **Stream Pipeline (Live Data)**:
-   - **Source**: `text_comment_2.csv`
-   - **Simulation**: Python script simulates live insertion into PostgreSQL `stream.raw_comments`.
-   - **CDC**: **Debezium** captures row changes and publishes to **Kafka**.
-   - **Processing**: **PySpark Structured Streaming** consumes Kafka events, tokenizes, and sinks to `staging.streaming`.
-3. **Data Validation (Data Quality)**:
-   - **Great Expectations (GX)** strictly validates data inside `staging.batch` and `staging.streaming`.
-4. **Data Transformation (dbt)**:
-   - **dbt** acts as the unification layer, merging both staging tables, assigning UUIDs where needed, and upserting clean data into the final `production.comments` Data Warehouse table.
-5. **Model Experimentation (MLOps)**:
-   - **DVC** orchestrates the ML pipeline (Extract → Train → Evaluate → Register).
-   - **MLflow** tracks metrics, parameters, and model registry artifacts.
-6. **Orchestration**:
-   - **Apache Airflow** schedules and triggers the end-to-end pipeline (`data_prep → data_quality → data_transform → model_exp`).
-7. **Monitoring & Logging**:
-   - **Prometheus & Grafana**: System and container metrics.
-   - **ELK Stack (Elasticsearch, Logstash, Kibana) + Filebeat**: Centralized system log aggregation.
+1. **Luồng Xử Lý Batch (Dữ liệu Lịch Sử)**:
+   - **Nguồn**: `text_comment_1.csv`
+   - **Thu thập (Ingestion)**: Upload định dạng Parquet lên Data Lake **MinIO**.
+   - **Xử lý (Processing)**: **PySpark** đọc dữ liệu từ MinIO, tách từ (tokenize) bằng mô hình BERT, và ghi vào PostgreSQL tại bảng `staging.batch`.
+2. **Luồng Xử Lý Stream (Dữ liệu Thời Gian Thực)**:
+   - **Nguồn**: `text_comment_2.csv`
+   - **Giả lập (Simulation)**: Script Python giả lập việc chèn liên tục dữ liệu trực tiếp vào PostgreSQL tại bảng `stream.raw_comments`.
+   - **CDC (Change Data Capture)**: **Debezium** bắt các thay đổi của dòng dữ liệu và đẩy bản tin lên **Kafka**.
+   - **Xử lý (Processing)**: **PySpark Structured Streaming** tiêu thụ (consume) sự kiện từ Kafka, tokenize, và ghi vào bảng `staging.streaming`.
+3. **Kiểm Định Dữ Liệu (Data Quality)**:
+   - **Great Expectations (GX)** kiểm tra nghiêm ngặt chất lượng và định dạng dữ liệu nằm trong `staging.batch` và `staging.streaming`.
+4. **Chuyển Đổi Dữ Liệu (dbt)**:
+   - **dbt** đóng vai trò là tầng hợp nhất, gộp cả hai bảng staging lại, cấp phát UUID tự động cho dữ liệu batch (nếu cần), và ghi đè/cập nhật dữ liệu sạch vào bảng Data Warehouse cuối cùng là `production.comments`.
+5. **Thử Nghiệm Mô Hình (MLOps)**:
+   - **DVC** điều phối luồng huấn luyện Machine Learning theo các chặng (Extract → Train → Evaluate → Register).
+   - **MLflow** theo dõi các chỉ số (metrics), siêu tham số (parameters) và lưu trữ mô hình (model registry).
+6. **Điều Phối Tự Động (Orchestration)**:
+   - **Apache Airflow** lập lịch và kích hoạt toàn bộ đường ống dẫn dữ liệu từ đầu đến cuối (`data_prep → data_quality → data_transform → model_exp`).
+7. **Giám Sát & Ghi Log (Monitoring)**:
+   - **Prometheus & Grafana**: Thu thập và trực quan hóa chỉ số hoạt động của Server và các Docker Container.
+   - **ELK Stack (Elasticsearch, Logstash, Kibana) + Filebeat**: Thu thập và quản lý log tập trung cho toàn bộ hệ thống.
 
-## 📁 Repository Structure
+## 📁 Cấu Trúc Thư Mục
 
-- `airflow/` - DAGs and Airflow configuration (`ml_pipeline.py`).
-- `batch_processing/` - PySpark batch jobs for MinIO ingestion and processing.
-- `configs/` - Shared YAML configurations used across all modules.
-- `data_transformation/` - **dbt** project containing `schema.yml` and `comments.sql`.
-- `data_validation/` - **Great Expectations** project and `validate.py` script.
-- `debezium/` - Connector configs and registration scripts.
-- `model_experiment/` - ML training scripts split into DVC stages.
-- `monitoring/` - Configuration for Prometheus, Grafana, Alertmanager, ELK, and Filebeat.
-- `stream_processing/` - PySpark Streaming jobs reading from Kafka.
-- `utils/` - Shared scripts like `create_table.py` and `simulate_stream.py`.
+- `airflow/` - Chứa file cấu hình DAGs của Airflow (`ml_pipeline.py`).
+- `batch_processing/` - Các job PySpark để đẩy dữ liệu lên MinIO và xử lý theo lô.
+- `configs/` - Các cấu hình YAML dùng chung cho nhiều module.
+- `data_transformation/` - Dự án **dbt** chứa `schema.yml` và câu lệnh SQL `comments.sql`.
+- `data_validation/` - Dự án **Great Expectations** và script chạy `validate.py`.
+- `debezium/` - Cấu hình connector bắt sự kiện CDC và script đăng ký.
+- `model_experiment/` - Script huấn luyện ML được chia nhỏ thành các stage của DVC.
+- `monitoring/` - Cấu hình cho cụm Prometheus, Grafana, Alertmanager, ELK, và Filebeat.
+- `stream_processing/` - Job PySpark Streaming đọc dữ liệu từ Kafka.
+- `utils/` - Các script dùng chung (VD: `create_table.py` và `simulate_stream.py`).
 
-## 🛠️ Infrastructure Stacks (Docker Compose)
+## 🛠️ Hạ Tầng Hệ Thống (Docker Compose)
 
-- **`data_lake_compose.yml`**: MinIO (`:9000`/`:9001`) + PostgreSQL (`:5433`).
+- **`data_lake_compose.yml`**: Chứa MinIO (`:9000`/`:9001`) + PostgreSQL (`:5433`).
 - **`stream_kafka_compose.yaml`**: Zookeeper, Kafka, Schema Registry, Debezium, Kafka UI.
-- **`airflow_compose.yaml`**: Apache Airflow orchestration.
+- **`airflow_compose.yaml`**: Hệ thống điều phối Apache Airflow.
 - **`monitoring-compose.yml`**: Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor.
 - **`elk-compose.yml`**: Elasticsearch, Logstash, Kibana, Filebeat.
 
-*(All stacks communicate seamlessly via the external `toxic-platform-network`)*
+*(Tất cả các thành phần này giao tiếp mượt mà với nhau thông qua mạng ảo external: `toxic-platform-network`)*
 
-## 🚦 How to Run
+## 🚦 Hướng Dẫn Chạy Hệ Thống
 
-### 1. Prerequisites
+### 1. Chuẩn bị (Prerequisites)
 ```bash
-# Create shared external network
+# Tạo mạng dùng chung cho các container
 docker network create toxic-platform-network
 
-# Copy environment variables
+# Copy các file biến môi trường
 cp .env.example .env
 cp .env.monitoring.example .env.monitoring
 
-# Start core infrastructure
+# Khởi động hạ tầng lõi (Core Infrastructure)
 docker compose -f data_lake_compose.yml up -d
 docker compose -f stream_kafka_compose.yaml up -d
 
-# Start Airflow & Monitoring
+# Khởi động Airflow & Hệ thống Giám sát
 docker compose -f airflow_compose.yaml up -d --build
 docker compose --env-file .env.monitoring -f monitoring-compose.yml up -d
 docker compose --env-file .env.monitoring -f elk-compose.yml up -d
 ```
 
-### 2. Initialization
+### 2. Khởi tạo (Initialization)
 ```bash
-# Register Debezium CDC Connector
+# Đăng ký Connector CDC với Debezium
 bash debezium/run.sh register_connector debezium/configs/toxic_comments_cdc.json
 
-# Create DB Schemas and Tables
+# Khởi tạo Schema và các Bảng trong Database
 python utils/create_schema.py
 python utils/create_table.py
 ```
 
-### 3. Execution via Airflow
-The entire pipeline is fully automated. Open the Airflow Web UI (`http://localhost:8082`) and trigger the `end_to_end_ml_pipeline` DAG.
+### 3. Vận Hành Tự Động Qua Airflow
+Toàn bộ luồng xử lý đã được tự động hóa. Hãy mở giao diện **Airflow Web UI** (`http://localhost:8082`) và kích hoạt (Trigger) DAG có tên là `end_to_end_ml_pipeline`.
 
-### 4. Manual Execution (Optional)
-If you prefer running components manually:
+### 4. Vận Hành Thủ Công (Tùy chọn)
+Nếu bạn muốn chạy từng bước bằng tay để kiểm tra:
 ```bash
-# Batch Data Prep
+# Xử lý Batch
 python batch_processing/main.py
 
-# Data Validation
+# Kiểm định Dữ Liệu (Data Validation)
 python data_validation/validate.py --source postgres
 python data_validation/validate.py --source stream
 
-# Data Transformation
+# Chuyển đổi Dữ Liệu (dbt)
 cd data_transformation && dbt run --profiles-dir . && cd ..
 
-# ML Experimentation (DVC)
+# Huấn luyện Mô hình (DVC)
 dvc repro
 ```
 
-## 📝 Coding Guidelines & Gotchas
-- **Environment Variables**: `.env` and `.env.monitoring` handle sensitive secrets and are ignored by git. Keep them populated locally.
-- **DVC Tracking**: Only `metrics/` is committed to git. Checkpoints are cached remotely.
-- **Lambda Strict Isolation**: `text_comment_1.csv` is strictly for batch. `text_comment_2.csv` is strictly for stream simulation to avoid data duplication.
-- **Monitoring Alerts**: Alertmanager routes to Discord based on `DISCORD_WEBHOOK_URL` in `.env.monitoring`.
+## 📝 Quy Ước Lập Trình & Lưu Ý
+- **Biến Môi Trường (Env Variables)**: `.env` và `.env.monitoring` chứa các thông tin nhạy cảm và sẽ bị bỏ qua bởi git (gitignore). Hãy chắc chắn bạn đã điền đủ thông tin ở máy tính cá nhân.
+- **Theo Dõi DVC**: Chỉ có thư mục `metrics/` được commit lên Git. Các file Checkpoint của model được cache lại ở xa (Remote Storage).
+- **Phân Lập Kiến Trúc Lambda Tách Bạch**: `text_comment_1.csv` chỉ được dùng riêng cho Batch. `text_comment_2.csv` chỉ được dùng để giả lập luồng Stream. Điều này giúp ngăn chặn hoàn toàn việc nhân đôi dữ liệu.
+- **Thông Báo Giám Sát (Alerts)**: Alertmanager sẽ tự động nhắn tin cảnh báo lỗi về kênh Discord dựa vào biến `DISCORD_WEBHOOK_URL` trong file `.env.monitoring`.
