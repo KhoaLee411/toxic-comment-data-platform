@@ -1,11 +1,11 @@
 FROM debezium/connect:latest
 
 USER root
-RUN microdnf -y install tar gzip && \
-    curl -L -o /tmp/confluent-hub-client.tar.gz http://client.hub.confluent.io/confluent-hub-client-latest.tar.gz && \
-    mkdir -p /opt/confluent-hub && \
-    tar -xzf /tmp/confluent-hub-client.tar.gz -C /opt/confluent-hub && \
-    /opt/confluent-hub/bin/confluent-hub install --no-prompt confluentinc/kafka-connect-avro-converter:7.5.0 --component-dir /kafka/connect && \
-    rm /tmp/confluent-hub-client.tar.gz
+RUN microdnf install -y unzip zip && microdnf clean all
 
 USER kafka
+RUN mkdir -p /kafka/connect/confluent-avro && \
+    curl -sSL -o /tmp/confluent-avro.zip https://d1i4a15mxbxib1.cloudfront.net/api/plugins/confluentinc/kafka-connect-avro-converter/versions/7.5.0/confluentinc-kafka-connect-avro-converter-7.5.0.zip && \
+    unzip /tmp/confluent-avro.zip -d /tmp/ && \
+    cp /tmp/confluentinc-kafka-connect-avro-converter-*/lib/*.jar /kafka/connect/confluent-avro/ && \
+    rm -rf /tmp/confluent-avro.zip /tmp/confluentinc-kafka-connect-avro-converter-*
