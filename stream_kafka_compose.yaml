@@ -80,7 +80,9 @@ services:
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
 
   debezium:
-    build: ./debezium
+    build:
+      context: .
+      dockerfile: debezium/Dockerfile
     container_name: stream-debezium
     depends_on:
       broker:
