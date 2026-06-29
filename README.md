@@ -102,6 +102,18 @@ cd data_transformation && dbt run --profiles-dir . && cd ..
 dvc repro
 ```
 
+### 5. Xóa Sạch Dữ Liệu & Chạy Lại Từ Đầu (Reset System)
+Nếu bạn muốn dọn dẹp sạch sẽ toàn bộ database, logs, model checkpoints và chạy lại hệ thống từ một trang giấy trắng, hãy sử dụng Makefile:
+```bash
+make clean-all
+```
+Lệnh này sẽ tự động:
+- Tắt tất cả các Container.
+- Xóa toàn bộ Docker Volumes (`postgres-db-volume`, `grafana_data`, `elasticsearch_data`,...).
+- Xóa các thư mục lưu dữ liệu trên máy chủ (`./data`, `./mlruns`, `./data_local/delta_lake`).
+
+Sau khi xóa xong, bạn chỉ cần quay lại bước 1 và chạy `make up-all` để bắt đầu lại.
+
 ## 📝 Quy Ước Lập Trình & Lưu Ý
 - **Biến Môi Trường (Env Variables)**: `.env` và `.env.monitoring` chứa các thông tin nhạy cảm và sẽ bị bỏ qua bởi git (gitignore). Hãy chắc chắn bạn đã điền đủ thông tin ở máy tính cá nhân.
 - **Theo Dõi DVC**: Chỉ có thư mục `metrics/` được commit lên Git. Các file Checkpoint của model được cache lại ở xa (Remote Storage).
