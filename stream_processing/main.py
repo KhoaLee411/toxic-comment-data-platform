@@ -19,7 +19,7 @@ CFG_FILE = PROJECT_ROOT / "configs" / "config.yml"
 cfg = load_cfg(str(CFG_FILE))
 
 stream_cfg = cfg["stream"]
-postgres_cfg = cfg["dw_postgres"]
+postgres_cfg = cfg["dwh"]
 
 JARS_PATH = str(PROJECT_ROOT / "jars")
 
@@ -82,7 +82,7 @@ def main():
 
     # ---- JDBC sink ----
     jdbc_url = f"jdbc:postgresql://{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}"
-    target_table = "production.comments"
+    target_table = "staging.streaming"
     
     logger.info(f"Configuring JDBC Sink: {jdbc_url} -> {target_table}")
     t_env.execute_sql(

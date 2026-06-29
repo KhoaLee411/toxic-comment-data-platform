@@ -26,21 +26,59 @@ with DAG(
             bash_command="""
                 export PATH=$HOME/.local/bin:$PATH
                 cd /opt/project/batch_processing
-                echo "🚀 Starting Batch Processing..."
+                echo "Starting Batch Processing..."
                 python main.py
             """,
         )
 
     with TaskGroup(group_id="data_quality", tooltip="Great Expectations validation") as data_quality:
-        run_data_validation = BashOperator(
+        # Validate PostgreSQL staging table (populated by batch pipeline)
+        validate_postgres = BashOperator(
             task_id="validate_postgres",
             bash_command="""
                 export PATH=$HOME/.local/bin:$PATH
                 cd /opt/project/data_validation
-                echo "✅ Running Great Expectations validation..."
+                echo "Running GX validation: postgres..."
                 python validate.py --source postgres
             """,
         )
+
+        # Validate Stream (Kafka CSV dump)
+        validate_stream = BashOperator(
+            task_id="validate_stream",
+            bash_command="""
+                export PATH=$HOME/.local/bin:$PATH
+                cd /opt/project/data_validation
+                echo "Running GX validation: stream..."
+                python validate.py --source kafka
+            """,
+        )
+
+        # Both validations are independent — run in parallel
+        [validate_postgres, validate_stream]
+
+    with TaskGroup(group_id="data_transformation", tooltip="dbt transform staging → production") as data_transform:
+        run_dbt = BashOperator(
+            task_id="dbt_run",
+            bash_command="""
+                export PATH=$HOME/.local/bin:$PATH
+                cd /opt/project/data_transformation
+                echo "Running dbt models..."
+                dbt run --profiles-dir . --target prod
+            """,
+        )
+
+        run_dbt_test = BashOperator(
+            task_id="dbt_test",
+            bash_command="""
+                export PATH=$HOME/.local/bin:$PATH
+                cd /opt/project/data_transformation
+                echo "Running dbt tests..."
+                dbt test --profiles-dir . --target prod
+            """,
+        )
+
+        run_dbt >> run_dbt_test
 
     with TaskGroup(group_id="model_experimentation", tooltip="DVC reproduction and tracking") as model_exp:
         run_dvc_repro = BashOperator(
@@ -48,8 +86,7 @@ with DAG(
             bash_command="""
                 export PATH=$HOME/.local/bin:$PATH
                 cd /opt/project
-                echo "🔁 Running DVC repro..."
-                which dvc
+                echo "Running DVC repro..."
                 dvc repro
             """,
         )
@@ -59,12 +96,12 @@ with DAG(
             bash_command="""
                 export PATH=$HOME/.local/bin:$PATH
                 cd /opt/project
-                echo "☁️ Pushing DVC outputs to MinIO remote..."
+                echo "Pushing DVC outputs to MinIO remote..."
                 dvc push
             """,
         )
-        
+
         run_dvc_repro >> push_dvc_to_remote
 
-    # Define the pipeline dependencies
-    data_prep >> data_quality >> model_exp
+    # Pipeline: batch → validate → dbt transform → train
+    data_prep >> data_quality >> data_transform >> model_exp

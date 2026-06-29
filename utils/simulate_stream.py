@@ -5,22 +5,23 @@ from pathlib import Path
 import pandas as pd
 from loguru import logger
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from load_config_from_file import load_cfg
-from postgresql_client import PostgreSQLClient
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils.load_config_from_file import load_cfg
+from utils.postgresql_client import PostgreSQLClient
+
 CFG_FILE = PROJECT_ROOT / "configs" / "config.yml"
 
 
 def main():
     cfg = load_cfg(str(CFG_FILE))
-    pg_cfg = cfg["dw_postgres"]
+    pg_cfg = cfg["dwh"]
     stream_cfg = cfg["stream"]
 
     table_name = stream_cfg["table"]
     sleep_secs = stream_cfg.get("sleep_secs", 2)
-    csv_dir = PROJECT_ROOT / cfg["data"]["local_path"]
+    csv_dir = PROJECT_ROOT / cfg["data"]["csv_path"]
 
     with PostgreSQLClient(
         database=pg_cfg["database"],
@@ -46,8 +47,11 @@ def main():
             logger.info(f"Processing {csv_file.name}")
             df = pd.read_csv(csv_file)
 
-            for idx, row in df.iterrows():
-                values = tuple(row[c] for c in insert_columns)
+            # Tối ưu: Dùng to_dict('records') nhanh hơn rất nhiều so với df.iterrows()
+            records = df.to_dict('records')
+
+            for idx, row in enumerate(records):
+                values = tuple(row.get(c) for c in insert_columns)
                 try:
                     pc.execute_query_params(insert_sql, values)
                     logger.info(f"Inserted row {idx}: {dict(zip(insert_columns, values))}")

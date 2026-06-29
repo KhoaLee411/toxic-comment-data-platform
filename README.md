@@ -61,7 +61,7 @@ docker compose -f stream_kafka_compose.yaml up -d
          ↓
 bash debezium/run.sh register_connector debezium/configs/toxic_comments_cdc.json
          ↓
-python utils/stream_data_to_postgresql.py   # Simulate: insert CSV rows into stream.raw_comments (2s delay)
+python utils/simulate_stream.py   # Simulate: insert CSV rows into stream.raw_comments (2s delay)
          ↓ (Debezium CDC: stream.raw_comments → Kafka topic)
 python stream_processing/main.py            # Spark readStream: Kafka → hf_tokenize UDF → production.comments
 ```
@@ -83,8 +83,8 @@ python batch_processing/main.py
 # Stream pipeline (requires batch setup to have run first for schemas/tables)
 docker compose -f stream_kafka_compose.yaml up -d
 bash debezium/run.sh register_connector debezium/configs/toxic_comments_cdc.json
-python utils/stream_data_to_postgresql.py   # terminal 1
-python stream_processing/main.py            # terminal 2
+python utils/simulate_stream.py   # terminal 1
+python stream_processing/main.py  # terminal 2
 ```
 
 ### Required `.env` (gitignored)

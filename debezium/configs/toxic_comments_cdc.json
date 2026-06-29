@@ -1,15 +1,14 @@
 {
-    "name": "toxic-comments-cdc",
-    "config": {
-        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
-        "database.hostname": "postgres",
-        "database.port": "5432",
-        "database.user": "${POSTGRES_USER}",
-        "database.password": "${POSTGRES_PASSWORD}",
-        "database.dbname": "${POSTGRES_DB}",
-        "plugin.name": "pgoutput",
-        "database.server.name": "toxic_comments",
-        "table.include.list": "stream.raw_comments",
-        "topic.prefix": "toxic_comments"
-    }
+  "name": "toxic-comments-cdc",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "${POSTGRES_USER}",
+    "database.password": "${POSTGRES_PASSWORD}",
+    "database.dbname": "${POSTGRES_DB}",
+    "plugin.name": "pgoutput",
+    "table.include.list": "stream.raw_comments",
+    "database.server.name": "toxic_comments"
+  }
 }

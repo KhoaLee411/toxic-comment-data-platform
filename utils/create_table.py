@@ -40,9 +40,19 @@ TABLE_DEFINITIONS: list[tuple[str, str]] = [
     # Bảng production.comments: Bảng đích (Data Warehouse/Production) lưu trữ dữ liệu sạch cuối cùng.
     # Dữ liệu từ các bảng staging và stream sau khi được dbt làm sạch & tokenized sẽ được hợp nhất vào đây
     # để sẵn sàng cho việc huấn luyện (train) Machine Learning hoặc Data Analysis.`
+    # Bảng staging.streaming: Lưu dữ liệu stream đã qua Flink tokenize tạm thời
+    ("staging.streaming", """
+        CREATE TABLE IF NOT EXISTS staging.streaming (
+            id             VARCHAR(255) PRIMARY KEY,
+            labels         BIGINT,
+            input_ids      TEXT,
+            attention_mask TEXT,
+            inserted_at    TIMESTAMP DEFAULT NOW()
+        );
+    """),
     ("production.comments", """
         CREATE TABLE IF NOT EXISTS production.comments (
-            id             SERIAL PRIMARY KEY,
+            id             VARCHAR(255) PRIMARY KEY,
             labels         BIGINT,
             input_ids      TEXT,
             attention_mask TEXT,
@@ -53,7 +63,7 @@ TABLE_DEFINITIONS: list[tuple[str, str]] = [
 
 
 def main():
-    cfg = load_cfg(str(CFG_FILE))["dw_postgres"]
+    cfg = load_cfg(str(CFG_FILE))["dwh"]
 
     try:
         with PostgreSQLClient(
