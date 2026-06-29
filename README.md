@@ -1,117 +1,97 @@
-# CLAUDE.md
+# Toxic Comment Data Platform
 
-Guidance for Claude Code working in this repository.
+A robust, production-ready data platform implementing a **Lambda Architecture** for ingesting, validating, transforming, and serving toxic-comment text data. It supports both **batch** (historical data) and **stream** (real-time events) processing pipelines.
 
-## What this is
+## 🚀 Architecture Overview
 
-A data platform for ingesting toxic-comment text data into a local data lake + data
-warehouse stack, supporting both **batch** and **stream** processing paths.
+The platform uses best-in-class data engineering tools to process raw CSVs (`data_local/raw/text_comment_1.csv` & `text_comment_2.csv`) into a final, clean `production.comments` table.
 
-Raw CSVs (`comment_text,labels`) in `data_local/raw/` are processed via two pipelines:
+1. **Batch Pipeline (Historical Data)**:
+   - **Source**: `text_comment_1.csv`
+   - **Ingestion**: Uploaded as Parquet to **MinIO** Data Lake.
+   - **Processing**: **PySpark** reads from MinIO, tokenizes text using BERT, and writes to PostgreSQL `staging.batch`.
+2. **Stream Pipeline (Live Data)**:
+   - **Source**: `text_comment_2.csv`
+   - **Simulation**: Python script simulates live insertion into PostgreSQL `stream.raw_comments`.
+   - **CDC**: **Debezium** captures row changes and publishes to **Kafka**.
+   - **Processing**: **PySpark Structured Streaming** consumes Kafka events, tokenizes, and sinks to `staging.streaming`.
+3. **Data Validation (Data Quality)**:
+   - **Great Expectations (GX)** strictly validates data inside `staging.batch` and `staging.streaming`.
+4. **Data Transformation (dbt)**:
+   - **dbt** acts as the unification layer, merging both staging tables, assigning UUIDs where needed, and upserting clean data into the final `production.comments` Data Warehouse table.
+5. **Orchestration**:
+   - **Apache Airflow** schedules and triggers the pipeline steps.
 
-- **Batch**: CSV → Delta Lake → MinIO → PySpark tokenization → PostgreSQL staging
-- **Stream**: PostgreSQL CDC (Debezium) → Kafka → PySpark Structured Streaming → PostgreSQL production
+## 📁 Repository Structure
 
-## Architecture
+- `airflow/` - DAGs and Airflow configuration (`ml_pipeline.py`).
+- `batch_processing/` - PySpark batch jobs for MinIO ingestion and processing.
+- `configs/` - Shared YAML configurations used across all modules.
+- `data_transformation/` - **dbt** project containing `schema.yml` and `comments.sql`.
+- `data_validation/` - **Great Expectations** project and `validate.py` script.
+- `debezium/` - Connector configs and registration scripts.
+- `stream_processing/` - PySpark Streaming jobs reading from Kafka.
+- `utils/` - Shared scripts like `create_table.py` and `simulate_stream.py`.
 
-### Infrastructure
+## 🛠️ Infrastructure Stacks (Docker Compose)
 
-- **`data_lake_compose.yml`** — MinIO + PostgreSQL stack:
-  - `minio` — API `:9000`, console `:9001`, data at `./data/minio`
-  - `postgres:16` — host port `5433` → container `5432`, `wal_level=logical` (CDC-ready)
-- **`stream_kafka_compose.yaml`** — Kafka + Debezium stack:
-  - Zookeeper, Kafka broker, Schema Registry, Debezium Connect, Debezium UI
-  - Debezium UI at `:8085`, Kafka Control Center at `:9021`
-  - Both compose files join the **external** Docker network `toxic-platform-network`
+- **`data_lake_compose.yml`**: MinIO (`:9000`/`:9001`) + PostgreSQL (`:5433`).
+- **`stream_kafka_compose.yaml`**: Zookeeper, Kafka, Schema Registry, Debezium, Kafka UI.
+- **`airflow_compose.yaml`**: Apache Airflow services.
+- **`monitoring-compose.yml`**: Prometheus & Grafana (Optional).
 
-### Config & Utilities
+*(All stacks communicate seamlessly via the external `toxic-platform-network`)*
 
-- **`configs/config.yml`** — single source of config (`datalake`, `dw_postgres`, `data`, `spark`, `model`, `stream` sections). Uses `${VAR}` env placeholders.
-- **`utils/load_config_from_file.py`** — `load_cfg()` loads YAML, calls `load_dotenv()`, expands `${VAR}` via `os.path.expandvars`.
-- **`utils/postgresql_client.py`** — `psycopg2` wrapper: `execute_query()`, `execute_query_params()`, `get_columns()`.
+## 🚦 How to Run
 
-### Processing Modules
-
-- **`batch_processing/spark_session.py`** — `create_spark_session()`, shared by both pipelines.
-- **`batch_processing/minio_config.py`** — `load_minio_config()`, configures Hadoop S3A connector.
-- **`batch_processing/main.py`** — reads parquet from MinIO, tokenizes with BERT (pandas batch), writes to `staging`.
-- **`stream_processing/main.py`** — reads Kafka CDC events (Debezium JSON), tokenizes with BERT UDF, writes to `production`.
-
-## Pipeline Flow
-
-### Batch Processing
-
-```
-docker compose -f data_lake_compose.yml up -d
-         ↓
-python utils/csv_to_delta_table.py      # CSV → Delta Lake (data_local/delta_lake/)
-python utils/upload_data_to_datalake.py  # Delta files → MinIO raw/delta_lake/
-python utils/investigate_delta_table.py  # Inspect local Delta tables (optional)
-         ↓
-python utils/create_schema.py            # CREATE SCHEMA staging, production, stream
-python utils/create_table.py             # CREATE TABLE staging.*, stream.raw_comments, production.comments
-         ↓
-python batch_processing/main.py          # Spark: MinIO → BERT tokenize → staging.*
-```
-
-### Stream Processing
-
-```
-docker compose -f stream_kafka_compose.yaml up -d
-         ↓
-bash debezium/run.sh register_connector debezium/configs/toxic_comments_cdc.json
-         ↓
-python utils/simulate_stream.py   # Simulate: insert CSV rows into stream.raw_comments (2s delay)
-         ↓ (Debezium CDC: stream.raw_comments → Kafka topic)
-python stream_processing/main.py            # Spark readStream: Kafka → hf_tokenize UDF → production.comments
-```
-
-## Running
-
+### 1. Prerequisites
 ```bash
-# One-time setup
+# Create shared external network
 docker network create toxic-platform-network
 
-# Batch pipeline
+# Start core infrastructure (Postgres, MinIO, Kafka)
 docker compose -f data_lake_compose.yml up -d
-python utils/write_delta_table.py
-python utils/upload_data_to_datalake.py
+docker compose -f stream_kafka_compose.yaml up -d
+```
+
+### 2. Initialization
+```bash
+# Register Debezium CDC Connector
+bash debezium/run.sh register_connector debezium/configs/toxic_comments_cdc.json
+
+# Create DB Schemas and Tables
 python utils/create_schema.py
 python utils/create_table.py
+```
+
+### 3. Execution
+
+**Batch Pipeline:**
+```bash
+# Process historical data
 python batch_processing/main.py
-
-# Stream pipeline (requires batch setup to have run first for schemas/tables)
-docker compose -f stream_kafka_compose.yaml up -d
-bash debezium/run.sh register_connector debezium/configs/toxic_comments_cdc.json
-python utils/simulate_stream.py   # terminal 1
-python stream_processing/main.py  # terminal 2
 ```
 
-### Required `.env` (gitignored)
+**Stream Pipeline:**
+```bash
+# Terminal 1: Start PySpark Streaming consumer
+python stream_processing/main.py
 
+# Terminal 2: Start generating fake stream events
+python utils/simulate_stream.py
 ```
-MINIO_ROOT_USER=...
-MINIO_ROOT_PASSWORD=...
-POSTGRES_DB=...
-POSTGRES_USER=...
-POSTGRES_PASSWORD=...
+
+**Validation & Transformation (Orchestrated via Airflow or Manual):**
+```bash
+# 1. Run Data Quality Checks
+python data_validation/validate.py
+
+# 2. Run dbt to merge staging to production
+cd data_transformation && dbt run --profiles-dir .
 ```
 
-## Coding Conventions
-
-- **snake_case** for all file and folder names (except README.md, Dockerfile, .gitignore, .env).
-- **loguru** (`from loguru import logger`) for all logging — no stdlib `logging` or `print` in processing code.
-- **`PROJECT_ROOT`** as the canonical root path variable in every script.
-- Config loaded at module level via `cfg = load_cfg(str(CFG_FILE))`; tokenizer loaded at module level (expensive init).
-- All scripts runnable from project root — each inserts its own directory into `sys.path`.
-- Error handling: `try/except Exception as e: logger.error(...)` — never silent failures.
-
-## Gotchas
-
-- **`data/` and `.env` are gitignored.** Never commit them.
-- **`data_local/delta_lake/` is gitignored.** Created at runtime by `write_delta_table.py`.
-- **`stream_processing/main.py` imports `create_spark_session` from `batch_processing/`** — intentional reuse.
-- **BERT tokenizer downloads on first run** (`bert-base-uncased`). Ensure internet access or a local HuggingFace cache.
-- **Debezium topic name** is `toxic_comments.stream.raw_comments` (prefix.schema.table from connector config).
-- **`stream_checkpoint/`** is written to `data_local/stream_checkpoint/` — gitignored via `data_local/`.
-- Install all deps: `pip install -r requirements.txt`
+## 📝 Coding Guidelines & Gotchas
+- **Environment Variables**: Create a `.env` file based on `.env.example` in the root directory. This is ignored by git.
+- **`gx/` Config**: The GX context dynamically uses `data_validation/gx` and resolves credentials via python strings.
+- **Lambda Strict Isolation**: `text_comment_1.csv` is strictly for batch. `text_comment_2.csv` is strictly for stream simulation to avoid data duplication.
+- **Postgres Arrays as JSON**: Data is stored as JSON text arrays (`[101, 2023]`), which is correctly handled by dbt and Great Expectations.
