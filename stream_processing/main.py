@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -67,7 +66,7 @@ def main():
         f"""
         CREATE TABLE m2_streaming_src (
         comment_text STRING,
-        labels INT
+        labels BIGINT
         ) WITH (
         'connector' = 'kafka',
         'topic' = '{stream_cfg['topic']}',
@@ -89,7 +88,7 @@ def main():
         f"""
         CREATE TABLE staging_streaming_sink (
           id STRING NOT NULL,
-          labels INT,
+          labels BIGINT,
           input_ids STRING,
           attention_mask STRING,
           PRIMARY KEY (id) NOT ENFORCED
