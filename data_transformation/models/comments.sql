@@ -8,7 +8,7 @@
 
 WITH batch_data AS (
   SELECT
-    gen_random_uuid()::varchar(255) AS id, -- Generate ID for batch
+    md5(input_ids || labels::text)::varchar(255) AS id, -- Generate deterministic ID for batch
     labels::bigint,
     input_ids::text,
     attention_mask::text
