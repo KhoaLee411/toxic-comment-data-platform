@@ -10,7 +10,7 @@
 /*
   transform_table_clean
   ---------------------
-  Reads from staging.text_comment_1 (PostgreSQL native array columns)
+  Reads from staging.batch (PostgreSQL native array columns)
   and converts them to JSONB arrays for downstream ML consumption.
 
   Source format  : input_ids = {101, 2023, 1010, ...}  (PostgreSQL integer array)
@@ -22,7 +22,7 @@ WITH src AS (
     labels,
     input_ids,
     attention_mask
-  FROM {{ source('staging_source', 'text_comment_1') }}
+  FROM {{ source('staging_source', 'batch') }}
   -- Drop rows with NULL required fields before any casting
   WHERE
     labels IS NOT NULL

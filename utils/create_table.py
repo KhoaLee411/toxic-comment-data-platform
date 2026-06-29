@@ -9,19 +9,10 @@ from postgresql_client import PostgreSQLClient
 CFG_FILE = "./configs/config.yml"
 
 TABLE_DEFINITIONS: list[tuple[str, str]] = [
-    # Bảng staging.text_comment_1: Lưu trữ dữ liệu text đã được mã hóa (tokenized) tạm thời.
+    # Bảng staging.batch: Lưu trữ dữ liệu text đã được mã hóa (tokenized) từ luồng Batch.
     # Các trường 'input_ids' và 'attention_mask' là định dạng chuẩn đầu vào cho các mô hình NLP (như BERT, RoBERTa).
-    ("staging.text_comment_1", """
-        CREATE TABLE IF NOT EXISTS staging.text_comment_1 (
-            labels         BIGINT,
-            input_ids      TEXT,
-            attention_mask TEXT
-        );
-    """),
-    # Bảng staging.text_comment_2: Tương tự như text_comment_1, đóng vai trò làm bảng tạm thứ 2
-    # để phục vụ cho các luồng xử lý dữ liệu song song hoặc chia tách batch trước khi dbt tổng hợp lại.
-    ("staging.text_comment_2", """
-        CREATE TABLE IF NOT EXISTS staging.text_comment_2 (
+    ("staging.batch", """
+        CREATE TABLE IF NOT EXISTS staging.batch (
             labels         BIGINT,
             input_ids      TEXT,
             attention_mask TEXT

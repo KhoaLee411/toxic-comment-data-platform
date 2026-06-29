@@ -63,10 +63,10 @@ def main():
     )
 
     prefix = datalake_cfg["folder_name"] + "/"
-    folders = list_minio_folders(minio_client, datalake_cfg["bucket_name"], prefix)
+    folders = ["text_comment_1"]
 
     for folder in folders:
-        logger.info(f"Processing folder: {folder}")
+        logger.info(f"Processing folder: {folder} for batch pipeline")
         parquet_path = f"s3a://{datalake_cfg['bucket_name']}/{prefix}{folder}/*.parquet"
         try:
             df = spark.read.parquet(parquet_path)
@@ -85,7 +85,7 @@ def main():
     
             processed_df.repartition(4).write.jdbc(
                 url=f"jdbc:postgresql://{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}",
-                table=f"{postgres_cfg['staging_schema']}.{folder}",
+                table=f"{postgres_cfg['staging_schema']}.batch",
                 mode="append",
                 properties={
                     "user": postgres_cfg["user"],

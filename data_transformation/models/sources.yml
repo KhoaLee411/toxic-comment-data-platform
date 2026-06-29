@@ -5,7 +5,7 @@ sources:
     schema: staging
     description: "Raw tokenized toxic comment data ingested from Kafka into PostgreSQL staging."
     tables:
-      - name: text_comment_1
+      - name: batch
         description: "Raw staging table with BERT-tokenized comment data."
         columns:
           - name: labels

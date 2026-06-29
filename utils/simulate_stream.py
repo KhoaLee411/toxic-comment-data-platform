@@ -43,21 +43,25 @@ def main():
             f"VALUES ({placeholders})"
         )
 
-        for csv_file in sorted(csv_dir.glob("*.csv")):
-            logger.info(f"Processing {csv_file.name}")
-            df = pd.read_csv(csv_file)
+        csv_file = csv_dir / "text_comment_2.csv"
+        if not csv_file.exists():
+            logger.error(f"File {csv_file} not found.")
+            return
 
-            # Tối ưu: Dùng to_dict('records') nhanh hơn rất nhiều so với df.iterrows()
-            records = df.to_dict('records')
+        logger.info(f"Processing {csv_file.name} for stream simulation")
+        df = pd.read_csv(csv_file)
 
-            for idx, row in enumerate(records):
-                values = tuple(row.get(c) for c in insert_columns)
-                try:
-                    pc.execute_query_params(insert_sql, values)
-                    logger.info(f"Inserted row {idx}: {dict(zip(insert_columns, values))}")
-                except Exception as e:
-                    logger.error(f"Row {idx} failed: {e}")
-                time.sleep(sleep_secs)
+        # Tối ưu: Dùng to_dict('records') nhanh hơn rất nhiều so với df.iterrows()
+        records = df.to_dict('records')
+
+        for idx, row in enumerate(records):
+            values = tuple(row.get(c) for c in insert_columns)
+            try:
+                pc.execute_query_params(insert_sql, values)
+                logger.info(f"Inserted row {idx}: {dict(zip(insert_columns, values))}")
+            except Exception as e:
+                logger.error(f"Row {idx} failed: {e}")
+            time.sleep(sleep_secs)
 
     logger.success("Streaming simulation complete.")
 
