@@ -43,14 +43,14 @@ with DAG(
             """,
         )
 
-        # Validate Stream (Kafka CSV dump)
+        # Validate Stream (staging.streaming)
         validate_stream = BashOperator(
             task_id="validate_stream",
             bash_command="""
                 export PATH=$HOME/.local/bin:$PATH
                 cd /opt/project/data_validation
                 echo "Running GX validation: stream..."
-                python validate.py --source kafka
+                python validate.py --source stream
             """,
         )
 
