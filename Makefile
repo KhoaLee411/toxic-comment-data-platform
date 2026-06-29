@@ -49,15 +49,15 @@ down-elk:
 # Khởi động / tắt tất cả
 up-all:
 	docker network create toxic-platform-network || true
-	docker compose -f data_lake_compose.yml -f stream_kafka_compose.yaml -f airflow_compose.yaml -f monitoring-compose.yml -f elk-compose.yml up -d --build
+	docker compose --env-file .env.monitoring -f data_lake_compose.yml -f stream_kafka_compose.yaml -f airflow_compose.yaml -f monitoring-compose.yml -f elk-compose.yml up -d --build
 
 down-all:
-	docker compose -f data_lake_compose.yml -f stream_kafka_compose.yaml -f airflow_compose.yaml -f monitoring-compose.yml -f elk-compose.yml down
+	docker compose --env-file .env.monitoring -f data_lake_compose.yml -f stream_kafka_compose.yaml -f airflow_compose.yaml -f monitoring-compose.yml -f elk-compose.yml down
 
 # Xóa SẠCH SẼ dữ liệu để làm lại từ đầu
 clean-all: down-all
 	@echo "Đang xóa tất cả Docker Volumes..."
-	docker compose -f data_lake_compose.yml -f stream_kafka_compose.yaml -f airflow_compose.yaml -f monitoring-compose.yml -f elk-compose.yml down -v
+	docker compose --env-file .env.monitoring -f data_lake_compose.yml -f stream_kafka_compose.yaml -f airflow_compose.yaml -f monitoring-compose.yml -f elk-compose.yml down -v
 	@echo "Đang xóa thư mục dữ liệu cục bộ (Local Data)..."
 	sudo rm -rf ./data/minio ./data/postgres ./data/kafka ./data/zookeeper
 	sudo rm -rf ./data_local/delta_lake ./data_local/stream_checkpoint
