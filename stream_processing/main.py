@@ -80,6 +80,8 @@ def main():
     """
     )
 
+    from pyflink.table.expressions import call, col, lit, current_timestamp
+    
     # ---- JDBC sink ----
     jdbc_url = f"jdbc:postgresql://{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}"
     target_table = "staging.streaming"
@@ -92,6 +94,9 @@ def main():
           labels INT,
           input_ids STRING,
           attention_mask STRING,
+          lineage_source_file STRING,
+          lineage_run_id STRING,
+          lineage_processed_at TIMESTAMP(3),
           PRIMARY KEY (id) NOT ENFORCED
         ) WITH (
           'connector' = 'jdbc',
@@ -117,6 +122,9 @@ def main():
         col("labels"),
         col("tok").get("input_ids").alias("input_ids"),
         col("tok").get("attention_mask").alias("attention_mask"),
+        lit("kafka:stream.raw_comments").alias("lineage_source_file"),
+        lit("flink_streaming_job").alias("lineage_run_id"),
+        current_timestamp().alias("lineage_processed_at")
     )
 
     # Execute continuous insert

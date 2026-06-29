@@ -13,9 +13,12 @@ TABLE_DEFINITIONS: list[tuple[str, str]] = [
     # Các trường 'input_ids' và 'attention_mask' là định dạng chuẩn đầu vào cho các mô hình NLP (như BERT, RoBERTa).
     ("staging.batch", """
         CREATE TABLE IF NOT EXISTS staging.batch (
-            labels         BIGINT,
-            input_ids      TEXT,
-            attention_mask TEXT
+            labels               BIGINT,
+            input_ids            TEXT,
+            attention_mask       TEXT,
+            lineage_source_file  TEXT,
+            lineage_run_id       VARCHAR(255),
+            lineage_processed_at TIMESTAMP DEFAULT NOW()
         );
     """),
     # Bảng stream.raw_comments: Lưu trữ bình luận thô (chưa qua tokenized) theo thời gian thực (real-time).
@@ -43,11 +46,13 @@ TABLE_DEFINITIONS: list[tuple[str, str]] = [
     """),
     ("production.comments", """
         CREATE TABLE IF NOT EXISTS production.comments (
-            id             VARCHAR(255) PRIMARY KEY,
-            labels         BIGINT,
-            input_ids      TEXT,
-            attention_mask TEXT,
-            inserted_at    TIMESTAMP DEFAULT NOW()
+            id                   VARCHAR(255) PRIMARY KEY,
+            labels               BIGINT,
+            input_ids            TEXT,
+            attention_mask       TEXT,
+            lineage_source_file  TEXT,
+            lineage_run_id       VARCHAR(255),
+            lineage_processed_at TIMESTAMP DEFAULT NOW()
         );
     """),
 ]

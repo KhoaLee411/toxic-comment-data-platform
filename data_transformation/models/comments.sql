@@ -11,7 +11,10 @@ WITH batch_data AS (
     md5(input_ids || labels::text)::varchar(255) AS id, -- Generate deterministic ID for batch
     labels::bigint,
     input_ids::text,
-    attention_mask::text
+    attention_mask::text,
+    lineage_source_file::text,
+    lineage_run_id::varchar(255),
+    lineage_processed_at::timestamp
   FROM {{ source('staging', 'batch') }}
   WHERE labels IS NOT NULL
 ),
@@ -21,7 +24,10 @@ stream_data AS (
     id::varchar(255),
     labels::bigint,
     input_ids::text,
-    attention_mask::text
+    attention_mask::text,
+    lineage_source_file::text,
+    lineage_run_id::varchar(255),
+    lineage_processed_at::timestamp
   FROM {{ source('staging', 'streaming') }}
   WHERE labels IS NOT NULL
 )
