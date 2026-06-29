@@ -72,11 +72,6 @@ def main():
             df = spark.read.parquet(parquet_path)
             logger.info(f"Read {df.count()} rows, columns: {df.columns}")
             
-            from pyspark.sql.functions import input_file_name, current_timestamp, lit
-            import uuid
-            
-            run_id = str(uuid.uuid4())
-            
             output_schema = StructType(
                 [f for f in df.schema.fields if f.name != "comment_text"]
                 + [
@@ -86,12 +81,6 @@ def main():
             )
 
             processed_df = df.mapInPandas(tokenize_partition, schema=output_schema)
-            
-            # Add Row-Level Lineage Tracking
-            processed_df = processed_df \
-                .withColumn("lineage_source_file", input_file_name()) \
-                .withColumn("lineage_run_id", lit(run_id)) \
-                .withColumn("lineage_processed_at", current_timestamp())
             
     
             processed_df.repartition(4).write.jdbc(
