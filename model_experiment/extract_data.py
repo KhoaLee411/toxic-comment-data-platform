@@ -8,10 +8,10 @@ from loguru import logger
 from utils.load_config_from_file import load_cfg
 from utils.postgresql_client import PostgreSQLClient
 
-TABLE_NAME = "production.table_clean"
+TABLE_NAME = "production.comments"
 COLUMNS = "input_ids, attention_mask, labels"
 CFG_PATH = "./configs/config.yml"
-cfg = load_cfg(CFG_PATH)["dw_postgres"]
+cfg = load_cfg(CFG_PATH)["dwh"]
 
 
 def is_running_in_docker():

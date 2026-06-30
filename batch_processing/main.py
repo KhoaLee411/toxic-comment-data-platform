@@ -86,7 +86,7 @@ def main():
             processed_df.repartition(4).write.jdbc(
                 url=f"jdbc:postgresql://{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}",
                 table=f"{postgres_cfg['staging_schema']}.batch",
-                mode="append",
+                mode="overwrite",
                 properties={
                     "user": postgres_cfg["user"],
                     "password": postgres_cfg["password"],

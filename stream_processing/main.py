@@ -81,7 +81,7 @@ def main():
 
     # ---- JDBC sink ----
     jdbc_url = f"jdbc:postgresql://{postgres_cfg['host']}:{postgres_cfg['port']}/{postgres_cfg['database']}"
-    target_table = "staging.streaming"
+    target_table = f"{postgres_cfg['staging_schema']}.streaming"
     
     logger.info(f"Configuring JDBC Sink: {jdbc_url} -> {target_table}")
     t_env.execute_sql(

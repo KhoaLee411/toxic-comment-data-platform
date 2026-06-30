@@ -15,11 +15,11 @@ apache-airflow-providers-postgres==5.11.0
 apache-airflow-providers-docker==3.10.0
 
 # --- Great Expectations provider ---
-airflow-provider-great-expectations==0.3.2
+airflow-provider-great-expectations>=0.3.0
 
 # --- Data & ML ---
 pandas==2.3.1
-SQLAlchemy==2.0.42     
+SQLAlchemy<2.0.0,>=1.4.36     
 psycopg2-binary==2.9.10
 PyYAML==6.0.2
 datasets==4.0.0

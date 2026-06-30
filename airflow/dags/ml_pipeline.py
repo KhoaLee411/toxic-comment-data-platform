@@ -74,11 +74,23 @@ with DAG(
 ) as dag:
 
     # ── 1. Data Preparation ───────────────────────────────────────────────────
-    with TaskGroup("data_preparation", tooltip="Batch processing → PostgreSQL staging") as data_prep:
+    with TaskGroup("data_preparation", tooltip="Batch & Stream processing → PostgreSQL staging") as data_prep:
         batch_processing = bash_task(
             "batch_processing",
             cmd=f"echo 'Starting Batch Processing...' && {PYTHON} batch_processing/main.py",
         )
+        
+        stream_processing = bash_task(
+            "stream_processing",
+            cmd=f"echo 'Starting Stream Processing (Background)...' && nohup {PYTHON} stream_processing/main.py > /tmp/flink.log 2>&1 & sleep 10",
+        )
+        
+        stream_simulation = bash_task(
+            "stream_simulation",
+            cmd=f"echo 'Starting Stream Simulation...' && {PYTHON} utils/simulate_stream.py",
+        )
+
+        [batch_processing, stream_processing >> stream_simulation]
 
     # ── 2. Data Quality ───────────────────────────────────────────────────────
     with TaskGroup("data_quality", tooltip="Great Expectations validation") as data_quality:
