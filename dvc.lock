@@ -1,0 +1,100 @@
+schema: '2.0'
+stages:
+  extract:
+    cmd: python model_experiment/extract_data.py
+    deps:
+    - path: configs/config.yml
+      hash: md5
+      md5: 6181a508bc239bd83d9b44b1aac3fb8c
+      size: 700
+    - path: model_experiment/extract_data.py
+      hash: md5
+      md5: 90c487da1a3c395885245ab1338c348f
+      size: 1204
+    outs:
+    - path: data_local/production/cleaned_data.csv
+      hash: md5
+      md5: 4bc1dc90659f6411149a74d1ced32f52
+      size: 8175950
+  train:
+    cmd: python model_experiment/train.py
+    deps:
+    - path: data_local/production/cleaned_data.csv
+      hash: md5
+      md5: 4bc1dc90659f6411149a74d1ced32f52
+      size: 8175950
+    - path: model_experiment/config.py
+      hash: md5
+      md5: 0927835c4f65d930fe8ec9ea67a6a6e1
+      size: 545
+    - path: model_experiment/dataloader.py
+      hash: md5
+      md5: 9168f11d0a650dd4981ded68ed72a448
+      size: 936
+    - path: model_experiment/model.py
+      hash: md5
+      md5: 5ce869c5ed4c16f13e203cb5d05c70bd
+      size: 674
+    - path: model_experiment/train.py
+      hash: md5
+      md5: 03c1b4ecb6eaf2ae2c6fbbcc17cc2d36
+      size: 3998
+    outs:
+    - path: metrics/train_metrics.json
+      hash: md5
+      md5: 8a4d82aa64c55fb3a72a3d8672c049da
+      size: 56
+    - path: model_checkpoints/
+      hash: md5
+      md5: c4182f15a65da680e5cd36a7abfa3ffb.dir
+      size: 549905728
+      nfiles: 2
+  evaluate:
+    cmd: python model_experiment/evaluate.py
+    deps:
+    - path: data_local/production/cleaned_data.csv
+      hash: md5
+      md5: 4bc1dc90659f6411149a74d1ced32f52
+      size: 8175950
+    - path: model_checkpoints/
+      hash: md5
+      md5: c4182f15a65da680e5cd36a7abfa3ffb.dir
+      size: 549905728
+      nfiles: 2
+    - path: model_experiment/config.py
+      hash: md5
+      md5: 0927835c4f65d930fe8ec9ea67a6a6e1
+      size: 545
+    - path: model_experiment/evaluate.py
+      hash: md5
+      md5: 3992a697b7dbb163be06425e04723d54
+      size: 2350
+    - path: model_experiment/model.py
+      hash: md5
+      md5: 5ce869c5ed4c16f13e203cb5d05c70bd
+      size: 674
+    outs:
+    - path: metrics/eval_metrics.json
+      hash: md5
+      md5: e9dbdd63e6d7d41e6702d5e879c6deb2
+      size: 667
+  register:
+    cmd: python model_experiment/register_model.py
+    deps:
+    - path: metrics/eval_metrics.json
+      hash: md5
+      md5: e9dbdd63e6d7d41e6702d5e879c6deb2
+      size: 667
+    - path: model_checkpoints/
+      hash: md5
+      md5: c4182f15a65da680e5cd36a7abfa3ffb.dir
+      size: 549905728
+      nfiles: 2
+    - path: model_experiment/config.py
+      hash: md5
+      md5: 0927835c4f65d930fe8ec9ea67a6a6e1
+      size: 545
+    - path: model_experiment/register_model.py
+      hash: md5
+      md5: 40416ea8bd25cc9ddf6107c2a40c3865
+      size: 1757

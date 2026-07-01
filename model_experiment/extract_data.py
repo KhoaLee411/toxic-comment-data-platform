@@ -35,9 +35,9 @@ def extract_and_save_data():
     df = pd.read_sql(query, conn)
     conn.close()
 
-    os.makedirs("./data/production", exist_ok=True)
-    df.to_csv("data/production/cleaned_data.csv", index=False)
-    print("✅ Data exported to data/production/cleaned_data.csv")
+    os.makedirs("./data_local/production", exist_ok=True)
+    df.to_csv("data_local/production/cleaned_data.csv", index=False)
+    print("✅ Data exported to data_local/production/cleaned_data.csv")
 
 
 if __name__ == "__main__":

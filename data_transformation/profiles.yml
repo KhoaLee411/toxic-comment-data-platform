@@ -3,20 +3,20 @@ data_transformation:
   outputs:
     dev:
       type: postgres
-      host: "{{ env_var('PG_HOST', 'localhost') }}"
-      port: "{{ env_var('PG_PORT', '5432') | int }}"
-      user: "{{ env_var('PG_USER') }}"
-      pass: "{{ env_var('PG_PASSWORD') }}"
-      database: "{{ env_var('PG_DB', 'k6') }}"
+      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5433') | int }}"
+      user: "{{ env_var('POSTGRES_USER') }}"
+      pass: "{{ env_var('POSTGRES_PASSWORD') }}"
+      database: "{{ env_var('POSTGRES_DB') }}"
       schema: staging
       threads: 4
 
     prod:
       type: postgres
-      host: "{{ env_var('PG_HOST', 'localhost') }}"
-      port: "{{ env_var('PG_PORT', '5432') | int }}"
-      user: "{{ env_var('PG_USER') }}"
-      pass: "{{ env_var('PG_PASSWORD') }}"
-      database: "{{ env_var('PG_DB', 'k6') }}"
+      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5433') | int }}"
+      user: "{{ env_var('POSTGRES_USER') }}"
+      pass: "{{ env_var('POSTGRES_PASSWORD') }}"
+      database: "{{ env_var('POSTGRES_DB') }}"
       schema: production
       threads: 4

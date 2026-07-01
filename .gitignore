@@ -15,3 +15,5 @@ __pycache__/
 
 # Thư mục lưu biểu đồ/ảnh
 images/
+/model_checkpoints
+.user.yml

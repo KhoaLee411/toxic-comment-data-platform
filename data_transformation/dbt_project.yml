@@ -19,4 +19,3 @@ clean-targets:
 models:
   data_transformation:
     +materialized: table
-    +schema: production

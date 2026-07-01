@@ -21,3 +21,6 @@ numpy>=1.25.0,<2.0.0
 # --- Utils & Misc ---
 python-dotenv
 pandas
+
+# --- Observability ---
+loguru==0.7.3

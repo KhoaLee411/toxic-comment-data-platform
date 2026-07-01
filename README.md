@@ -109,7 +109,12 @@ python data_validation/validate.py --source postgres
 python data_validation/validate.py --source stream
 
 # Chuyển đổi Dữ Liệu (dbt)
-cd data_transformation && dbt run --profiles-dir . && cd ..
+# Lưu ý: Cần nạp biến môi trường từ file .env trước khi chạy
+cd data_transformation 
+set -a && source ../.env && set +a
+dbt run --profiles-dir . --target prod
+dbt test --profiles-dir . --target prod
+cd ..
 
 # Huấn luyện Mô hình (DVC)
 dvc repro

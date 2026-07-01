@@ -103,9 +103,10 @@ def validate_postgres(context: FileDataContext) -> bool:
     print(validator.head())
     apply_expectations(validator, pg_format=False)
     try:
-        validator.save_expectation_suite(discard_failed_expectations=False)
-    except Exception:
-        pass
+        suite = validator.expectation_suite
+        suite.save()
+    except Exception as e:
+        print(f"Warning: {e}")
     return _run_checkpoint(context, "postgres_batch_checkpoint", validator)
 
 
@@ -116,9 +117,10 @@ def validate_stream(context: FileDataContext) -> bool:
     # Both are Postgres now, so pg_format=True
     apply_expectations(validator, pg_format=False)
     try:
-        validator.save_expectation_suite(discard_failed_expectations=False)
-    except Exception:
-        pass
+        suite = validator.expectation_suite
+        suite.save()
+    except Exception as e:
+        print(f"Warning: {e}")
     return _run_checkpoint(context, "postgres_stream_checkpoint", validator)
 
 

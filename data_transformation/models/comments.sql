@@ -24,8 +24,14 @@ stream_data AS (
     attention_mask::text
   FROM {{ source('staging', 'streaming') }}
   WHERE labels IS NOT NULL
+),
+
+combined AS (
+  SELECT * FROM batch_data
+  UNION ALL
+  SELECT * FROM stream_data
 )
 
-SELECT * FROM batch_data
-UNION ALL
-SELECT * FROM stream_data
+SELECT DISTINCT ON (id) *
+FROM combined
+ORDER BY id

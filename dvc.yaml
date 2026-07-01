@@ -5,7 +5,7 @@ stages:
       - model_experiment/extract_data.py
       - configs/config.yml
     outs:
-      - data/production/cleaned_data.csv:
+      - data_local/production/cleaned_data.csv:
           cache: true
 
   train:
@@ -15,7 +15,7 @@ stages:
       - model_experiment/model.py
       - model_experiment/dataloader.py
       - model_experiment/config.py
-      - data/production/cleaned_data.csv
+      - data_local/production/cleaned_data.csv
     outs:
       - model_checkpoints/:
           cache: true
@@ -29,7 +29,7 @@ stages:
       - model_experiment/evaluate.py
       - model_experiment/model.py
       - model_experiment/config.py
-      - data/production/cleaned_data.csv
+      - data_local/production/cleaned_data.csv
       - model_checkpoints/
     metrics:
       - metrics/eval_metrics.json:
