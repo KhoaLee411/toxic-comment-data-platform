@@ -29,6 +29,9 @@ class PostgreSQLClient:
         with self.conn.cursor() as cur:
             cur.execute(query, params)
 
+    def create_conn(self):
+        return self.conn
+
     def get_columns(self, table_name: str) -> list[str]:
         if "." in table_name:
             schema, table = table_name.split(".", 1)

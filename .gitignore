@@ -1,6 +1,5 @@
 data/
-data_local/delta_lake/
-data_local/stream_checkpoint/
+data_local/
 my-note.md
 
 # .gitignore

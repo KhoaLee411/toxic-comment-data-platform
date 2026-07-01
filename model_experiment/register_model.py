@@ -43,7 +43,10 @@ def main():
     model = load_best_model()
 
     with mlflow.start_run(run_name="model-registration"):
+        classification_report = metrics.pop("classification_report", None)
         mlflow.log_metrics(metrics)
+        if classification_report:
+            mlflow.log_dict(classification_report, "classification_report.json")
         mlflow.pytorch.log_model(
             model,
             artifact_path="model",

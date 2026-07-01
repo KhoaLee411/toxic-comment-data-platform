@@ -95,6 +95,12 @@ Toàn bộ luồng xử lý đã được tự động hóa. Hãy mở giao di�
 Nếu bạn muốn chạy từng bước bằng tay để kiểm tra:
 
 ```bash
+# Chuẩn bị dữ liệu (ghi file CSV thành Delta format)
+python utils/csv_to_delta_table.py
+
+# Giả lập luồng Stream (nên mở một terminal riêng để chạy liên tục)
+python utils/simulate_stream.py
+
 # Xử lý Batch
 python batch_processing/main.py
 
