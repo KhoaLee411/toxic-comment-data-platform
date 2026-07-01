@@ -47,10 +47,24 @@ def main():
         mlflow.log_metrics(metrics)
         if classification_report:
             mlflow.log_dict(classification_report, "classification_report.json")
+        from mlflow.models.signature import ModelSignature
+        from mlflow.types.schema import Schema, TensorSpec
+        import numpy as np
+
+        input_schema = Schema([
+            TensorSpec(np.dtype(np.int32), (-1, 512), "input_ids"),
+            TensorSpec(np.dtype(np.int32), (-1, 512), "attention_mask"),
+        ])
+        output_schema = Schema([
+            TensorSpec(np.dtype(np.float32), (-1, 1), "predictions"),
+        ])
+        signature = ModelSignature(inputs=input_schema, outputs=output_schema)
+        
         mlflow.pytorch.log_model(
             model,
-            artifact_path="model",
+            name="model",
             registered_model_name="bert-toxic-classifier",
+            signature=signature
         )
         logger.info("Model registered in MLflow as 'bert-toxic-classifier'")
 

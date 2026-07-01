@@ -29,8 +29,8 @@ stages:
       size: 545
     - path: model_experiment/dataloader.py
       hash: md5
-      md5: 9168f11d0a650dd4981ded68ed72a448
-      size: 936
+      md5: 79b1cf844e294ce9cbf7836c90446382
+      size: 918
     - path: model_experiment/model.py
       hash: md5
       md5: 5ce869c5ed4c16f13e203cb5d05c70bd
@@ -42,11 +42,11 @@ stages:
     outs:
     - path: metrics/train_metrics.json
       hash: md5
-      md5: 8a4d82aa64c55fb3a72a3d8672c049da
-      size: 56
+      md5: db244b75196d2eb2ab6e9bad46c48830
+      size: 55
     - path: model_checkpoints/
       hash: md5
-      md5: c4182f15a65da680e5cd36a7abfa3ffb.dir
+      md5: 499c13bbe5ee83ff33f9db3ec4d91831.dir
       size: 549905728
       nfiles: 2
   evaluate:
@@ -58,7 +58,7 @@ stages:
       size: 8175950
     - path: model_checkpoints/
       hash: md5
-      md5: c4182f15a65da680e5cd36a7abfa3ffb.dir
+      md5: 499c13bbe5ee83ff33f9db3ec4d91831.dir
       size: 549905728
       nfiles: 2
     - path: model_experiment/config.py
@@ -76,18 +76,18 @@ stages:
     outs:
     - path: metrics/eval_metrics.json
       hash: md5
-      md5: e9dbdd63e6d7d41e6702d5e879c6deb2
-      size: 667
+      md5: 4daba089fb87146058ec1416a0f60fef
+      size: 772
   register:
     cmd: python model_experiment/register_model.py
     deps:
     - path: metrics/eval_metrics.json
       hash: md5
-      md5: e9dbdd63e6d7d41e6702d5e879c6deb2
-      size: 667
+      md5: 4daba089fb87146058ec1416a0f60fef
+      size: 772
     - path: model_checkpoints/
       hash: md5
-      md5: c4182f15a65da680e5cd36a7abfa3ffb.dir
+      md5: 499c13bbe5ee83ff33f9db3ec4d91831.dir
       size: 549905728
       nfiles: 2
     - path: model_experiment/config.py
