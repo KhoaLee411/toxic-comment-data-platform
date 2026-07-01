@@ -13,3 +13,6 @@ my-note.md
 __pycache__/
 *.pyc
 *.pyo
+
+# Thư mục lưu biểu đồ/ảnh
+images/

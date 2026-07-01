@@ -24,7 +24,7 @@ spark:
   executor_memory: 8g
 
 model:
-  name: bert-base-uncased
+  name: distilbert-base-uncased
   max_length: 512
 
 stream:
