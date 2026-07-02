@@ -5,12 +5,12 @@ stages:
     deps:
     - path: configs/config.yml
       hash: md5
-      md5: 6181a508bc239bd83d9b44b1aac3fb8c
-      size: 700
+      md5: 07e9080fff841b680e60a50b12ebc260
+      size: 816
     - path: model_experiment/extract_data.py
       hash: md5
-      md5: 90c487da1a3c395885245ab1338c348f
-      size: 1204
+      md5: fb2a2197b7f7531431153d5e1b64319b
+      size: 1298
     outs:
     - path: data_local/production/cleaned_data.csv
       hash: md5
@@ -85,6 +85,7 @@ stages:
       hash: md5
       md5: 4daba089fb87146058ec1416a0f60fef
       size: 772
+      isexec: true
     - path: model_checkpoints/
       hash: md5
       md5: 499c13bbe5ee83ff33f9db3ec4d91831.dir
@@ -96,5 +97,5 @@ stages:
       size: 545
     - path: model_experiment/register_model.py
       hash: md5
-      md5: 40416ea8bd25cc9ddf6107c2a40c3865
-      size: 1757
+      md5: adac25df93d397b43ef9a65e1e445ab5
+      size: 2312

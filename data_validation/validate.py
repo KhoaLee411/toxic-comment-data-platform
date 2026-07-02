@@ -36,8 +36,8 @@ DATA_VALIDATION_DIR = os.path.dirname(__file__)
 PG_DATASOURCE   = "postgres_staging"
 PG_BATCH_ASSET  = "batch"
 PG_STREAM_ASSET = "streaming"
-SUITE_NAME      = "toxic_comment_suite"
-
+SUITE_NAME_BATCH  = "toxic_comment_batch_suite"
+SUITE_NAME_STREAM = "toxic_comment_stream_suite"
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -104,7 +104,7 @@ def _run_checkpoint(context, checkpoint_name: str, validator) -> bool:
 
 def validate_postgres(context: FileDataContext) -> bool:
     print("\n=== Validating PostgreSQL batch source (batch) ===")
-    validator = _build_validator(context, PG_DATASOURCE, PG_BATCH_ASSET, SUITE_NAME)
+    validator = _build_validator(context, PG_DATASOURCE, PG_BATCH_ASSET, SUITE_NAME_BATCH)
     # print(validator.head())
     apply_expectations(validator, pg_format=False)
     try:
@@ -117,7 +117,7 @@ def validate_postgres(context: FileDataContext) -> bool:
 
 def validate_stream(context: FileDataContext) -> bool:
     print("\n=== Validating PostgreSQL stream source (staging.streaming) ===")
-    validator = _build_validator(context, PG_DATASOURCE, PG_STREAM_ASSET, SUITE_NAME)
+    validator = _build_validator(context, PG_DATASOURCE, PG_STREAM_ASSET, SUITE_NAME_STREAM)
     # print(validator.head())
     # Both are Postgres now, so pg_format=True
     apply_expectations(validator, pg_format=False)

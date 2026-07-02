@@ -21,8 +21,12 @@ DEFAULT_ARGS = {
 def bash_task(task_id: str, cmd: str, workdir: str = PROJ_DIR, **kwargs) -> BashOperator:
     full_cmd = f"""
         set -euo pipefail
-        export PATH=\/home/khoa-lee/.local/bin:\/home/khoa-lee/.local/bin:/home/khoa-lee/go/bin:/usr/local/go/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/home/khoa-lee/.nvm/versions/node/v22.22.3/bin:/home/khoa-lee/miniconda3/bin:/home/khoa-lee/miniconda3/condabin:/home/khoa-lee/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
         export IS_DOCKER=true
+        if [ -f {PROJ_DIR}/.env ]; then
+            export $(grep -v '^#' {PROJ_DIR}/.env | xargs)
+        fi
+        export POSTGRES_HOST=postgres_datalake
+        export POSTGRES_PORT=5432
         cd {workdir}
         {cmd}
     """
@@ -61,7 +65,7 @@ with DAG(
         dvc_evaluate = bash_task('dvc_evaluate', cmd='dvc repro evaluate')
         metric_gate = PythonOperator(task_id='metric_gate', python_callable=check_eval_metrics)
         dvc_register = bash_task('dvc_register', cmd='dvc repro register')
-        dvc_push = bash_task('dvc_push', cmd='dvc push')
+        dvc_push = bash_task('dvc_push', cmd="dvc remote modify --local minio_remote endpointurl http://minio:9000 && dvc remote modify --local minio_remote access_key_id admin && dvc remote modify --local minio_remote secret_access_key admin123 && dvc push")
         dvc_extract >> dvc_train >> dvc_evaluate >> metric_gate >> dvc_register >> dvc_push
 
     batch_processing >> validate_postgres >> data_transform >> model_exp

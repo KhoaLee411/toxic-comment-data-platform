@@ -21,10 +21,12 @@ def is_running_in_docker():
 def extract_and_save_data():
     is_docker = is_running_in_docker()
     host = cfg.get("host_docker") if is_docker else cfg.get("host")
-    logger.info(f"🔌 Using PostgreSQL host: {host}")
+    port = cfg.get("port_docker") if is_docker else cfg.get("port")
+    logger.info(f"🔌 Using PostgreSQL host: {host}:{port}")
 
     pc = PostgreSQLClient(
         host=host,
+        port=port,
         database=cfg["database"],
         user=cfg["user"],
         password=cfg["password"],

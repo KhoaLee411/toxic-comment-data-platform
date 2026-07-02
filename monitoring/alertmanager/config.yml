@@ -52,7 +52,7 @@ route:
 receivers:
   - name: discord-critical
     discord_configs:
-      - webhook_url: "${DISCORD_WEBHOOK_URL}"
+      - webhook_url: "https://discordapp.com/api/webhooks/1522198272612241479/T81zw_bc6qt_vhFBEHoIHUzlmTJZUsl_VgA6eLKv-_qdEmcqw5zd8NSyYlg9YFUvzto0"
         title: |
           🔴 [CRITICAL] {{ .GroupLabels.alertname }}
         message: |
@@ -66,7 +66,7 @@ receivers:
 
   - name: discord-warning
     discord_configs:
-      - webhook_url: "${DISCORD_WEBHOOK_URL}"
+      - webhook_url: "https://discordapp.com/api/webhooks/1522198272612241479/T81zw_bc6qt_vhFBEHoIHUzlmTJZUsl_VgA6eLKv-_qdEmcqw5zd8NSyYlg9YFUvzto0"
         title: |
           🟡 [WARNING] {{ .GroupLabels.alertname }}
         message: |

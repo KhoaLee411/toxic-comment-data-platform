@@ -15,8 +15,12 @@ DEFAULT_ARGS = {
 def bash_task(task_id: str, cmd: str, workdir: str = PROJ_DIR, **kwargs) -> BashOperator:
     full_cmd = f"""
         set -euo pipefail
-        export PATH=\/home/khoa-lee/.local/bin:\/home/khoa-lee/.local/bin:/home/khoa-lee/go/bin:/usr/local/go/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/home/khoa-lee/.nvm/versions/node/v22.22.3/bin:/home/khoa-lee/miniconda3/bin:/home/khoa-lee/miniconda3/condabin:/home/khoa-lee/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
         export IS_DOCKER=true
+        if [ -f {PROJ_DIR}/.env ]; then
+            export $(grep -v '^#' {PROJ_DIR}/.env | xargs)
+        fi
+        export POSTGRES_HOST=postgres_datalake
+        export POSTGRES_PORT=5432
         cd {workdir}
         {cmd}
     """

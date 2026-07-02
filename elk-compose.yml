@@ -144,6 +144,7 @@ services:
     image: docker.elastic.co/beats/filebeat:${ELASTIC_VERSION}
     container_name: filebeat
     user: root # Must be root to read /var/lib/docker/containers
+    command: ["--strict.perms=false"]
     restart: unless-stopped
     volumes:
       - ./monitoring/elk/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro

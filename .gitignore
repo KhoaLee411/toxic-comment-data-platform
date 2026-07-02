@@ -22,4 +22,4 @@ mlruns/
 # Logs and runtime artifacts
 build.log
 airflow/logs/
-artifacts/
+

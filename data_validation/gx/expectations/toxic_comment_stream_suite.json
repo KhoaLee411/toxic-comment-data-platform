@@ -1,7 +1,7 @@
 {
   "expectations": [
     {
-      "id": "07411334-6471-4082-8fc4-e26313d86373",
+      "id": "a09b98fb-f9cc-418a-be04-171672bff6f0",
       "kwargs": {
         "column": "labels"
       },
@@ -10,7 +10,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "17feb6ac-049e-441c-ac78-ef094de86116",
+      "id": "aaeaca9c-9e3b-47d4-9a1e-17d24f390f00",
       "kwargs": {
         "column": "input_ids"
       },
@@ -19,7 +19,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "431b5dc0-c56f-47de-a997-fa42dd199de9",
+      "id": "97567dbd-7ef9-4c2c-8c46-3cdeba38df0e",
       "kwargs": {
         "column": "attention_mask"
       },
@@ -28,7 +28,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "ad6f2d0e-a2b0-495e-811d-5474f0783f68",
+      "id": "e683f174-acd4-44b0-9d46-6a4412ea63b0",
       "kwargs": {
         "column": "labels",
         "value_set": [
@@ -41,7 +41,35 @@
       "type": "expect_column_values_to_be_in_set"
     },
     {
-      "id": "2b0f4ceb-c2ac-4a5f-953a-2de08bd8d87b",
+      "id": "d854fddf-d4b7-4b4b-81da-c65c32df8269",
+      "kwargs": {
+        "column": "id"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "9975a47a-9604-4f60-9af5-7a484ea62617",
+      "kwargs": {
+        "column": "id"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_unique"
+    },
+    {
+      "id": "81096bf7-1299-4eda-b665-05800c8376f4",
+      "kwargs": {
+        "column": "id",
+        "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_match_regex"
+    },
+    {
+      "id": "6f0052b4-e84a-4540-b425-3329016f6a80",
       "kwargs": {
         "column": "input_ids",
         "regex": "^\\s*\\[\\s*\\d+(?:\\s*,\\s*\\d+)*\\s*\\]\\s*$"
@@ -51,7 +79,7 @@
       "type": "expect_column_values_to_match_regex"
     },
     {
-      "id": "c0acb41a-9578-40ee-8be2-88e72ab3fb6f",
+      "id": "37f947a3-9a49-41c2-b104-fa188cdbf572",
       "kwargs": {
         "column": "attention_mask",
         "regex": "^\\s*\\[\\s*[01](?:\\s*,\\s*[01])*\\s*\\]\\s*$"
@@ -59,40 +87,12 @@
       "meta": {},
       "severity": "critical",
       "type": "expect_column_values_to_match_regex"
-    },
-    {
-      "id": "fa0ebd61-4868-4d8a-b693-8bf6df85a08a",
-      "kwargs": {
-        "column": "id"
-      },
-      "meta": {},
-      "severity": "critical",
-      "type": "expect_column_values_to_not_be_null"
-    },
-    {
-      "id": "6348a995-bb38-4c9b-807f-37c6c8a32059",
-      "kwargs": {
-        "column": "id"
-      },
-      "meta": {},
-      "severity": "critical",
-      "type": "expect_column_values_to_be_unique"
-    },
-    {
-      "id": "10086055-6ea8-4e3e-84e9-f5bc0638deaf",
-      "kwargs": {
-        "column": "id",
-        "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-      },
-      "meta": {},
-      "severity": "critical",
-      "type": "expect_column_values_to_match_regex"
     }
   ],
-  "id": "9fbe7ff2-5784-44dc-af79-231f48ed365c",
+  "id": "4ae87a08-995a-402a-9bf4-8f990c75e156",
   "meta": {
-    "great_expectations_version": "1.18.0"
+    "great_expectations_version": "1.18.2"
   },
-  "name": "toxic_comment_suite",
+  "name": "toxic_comment_stream_suite",
   "notes": null
 }
