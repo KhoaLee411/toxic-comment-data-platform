@@ -1,4 +1,4 @@
-FROM debezium/connect:latest
+FROM quay.io/debezium/connect:2.7.0.Final
 
 USER root
 RUN mkdir -p /kafka/connect/confluent-avro

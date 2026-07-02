@@ -97,7 +97,6 @@ fluent_datasources:
         batch_metadata: {}
         table_name: streaming
         schema_name: staging
-    connection_string: 
-      postgresql+psycopg2://postgres:postgres123@localhost:5433/toxic_comment_db
+    connection_string: ${DB_URL}
 analytics_enabled:
 data_context_id: 85e669e2-0df1-4add-aa9a-fd504dd2e347

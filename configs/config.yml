@@ -1,5 +1,6 @@
 datalake:
   endpoint: localhost:9000
+  endpoint_docker: minio:9000
   bucket_name: raw
   folder_name: delta_lake
   access_key: ${MINIO_ROOT_USER}
@@ -8,8 +9,9 @@ datalake:
 
 dwh:
   host: localhost
-  host_docker: postgres
+  host_docker: postgres_datalake
   port: 5433
+  port_docker: 5432
   database: ${POSTGRES_DB}
   user: ${POSTGRES_USER}
   password: ${POSTGRES_PASSWORD}
@@ -30,6 +32,7 @@ model:
 
 stream:
   table: stream.raw_comments
-  sleep_secs: 2
+  sleep_secs: 0.05
   kafka_bootstrap_servers: localhost:9092
+  kafka_bootstrap_servers_docker: stream-broker:29092
   topic: toxic_comments.stream.raw_comments
